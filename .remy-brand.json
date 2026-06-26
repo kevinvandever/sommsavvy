@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "SommSavvy",
+  "tagline": "A pocket sommelier for wine, beer, and spirits.",
+  "logoUrl": "https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/e13f234a-ab5f-4a89-b3d8-4ad26c7dc657.png",
+  "colors": {
+    "background": "#1F1A15",
+    "text": "#C9BFA8",
+    "heading": "#F2E9D4",
+    "accent": "#E89B3C",
+    "muted": "#C9BFA8"
+  },
+  "typography": {
+    "body": {
+      "family": "Geist",
+      "stylesheet": "https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap"
+    },
+    "heading": {
+      "family": "Rowan",
+      "stylesheet": "https://api.fontshare.com/v2/css?f[]=rowan@300,400,500,600,700&display=swap"
+    }
+  }
+}

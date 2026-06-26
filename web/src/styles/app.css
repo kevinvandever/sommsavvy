@@ -1,0 +1,265 @@
+/* Global app styles: type primitives, ambient canvas, reusable utilities. */
+
+/* ── Typography ─────────────────────────────────────────────────────── */
+
+.t-display {
+  font-family: var(--font-rowan);
+  font-size: clamp(36px, 8vw, 56px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  color: var(--parchment);
+}
+
+.t-display--italic {
+  font-style: italic;
+}
+
+.t-headline {
+  font-family: var(--font-rowan);
+  font-size: clamp(24px, 5.5vw, 32px);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: var(--parchment);
+}
+
+.t-subhead {
+  font-family: var(--font-geist);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+  color: var(--parchment);
+}
+
+.t-body {
+  font-family: var(--font-geist);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--parchment);
+}
+
+.t-why {
+  font-family: var(--font-geist);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--parchment);
+}
+
+.t-label {
+  font-family: var(--font-geist);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--bone) 80%, transparent);
+}
+
+.t-caption {
+  font-family: var(--font-geist);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: color-mix(in oklch, var(--bone) 80%, transparent);
+}
+
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--bone) 75%, transparent);
+}
+
+.t-aside {
+  font-family: var(--font-rowan);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.92em;
+  color: var(--bone);
+  letter-spacing: -0.005em;
+}
+
+/* ── Ambient canvas ─────────────────────────────────────────────────── */
+
+.canvas {
+  position: relative;
+  min-height: 100dvh;
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% 110%,
+      color-mix(in oklch, var(--ember) 8%, transparent) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg in oklch,
+      color-mix(in oklch, var(--midnight) 92%, var(--bordeaux)) 0%,
+      var(--midnight) 40%,
+      var(--midnight) 100%
+    );
+  background-color: var(--midnight);
+  color: var(--parchment);
+  overflow-x: clip;
+}
+
+/* The ember-room pulse, slow heartbeat at the bottom of the viewport. */
+.ember-room {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 50vh;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 70% 100% at 50% 100%,
+    color-mix(in oklch, var(--ember) 9%, transparent) 0%,
+    transparent 70%
+  );
+  animation: ember-room 8s ease-in-out infinite;
+}
+@keyframes ember-room {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: var(--ember);
+  color: var(--midnight);
+  border-radius: var(--radius-pill);
+  font: 500 15px var(--font-geist);
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition:
+    box-shadow 280ms var(--ease-standard),
+    transform 180ms var(--ease-standard);
+}
+.btn-primary:hover {
+  box-shadow: var(--glow-ember);
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 22px;
+  background: var(--smoke);
+  color: var(--bone);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font: 500 14px var(--font-geist);
+  cursor: pointer;
+  transition:
+    color 180ms var(--ease-standard),
+    border-color 180ms var(--ease-standard),
+    background 180ms var(--ease-standard);
+}
+.btn-secondary:hover {
+  color: var(--parchment);
+  border-color: color-mix(in oklch, var(--ember) 30%, var(--border-subtle));
+}
+
+.btn-tertiary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  color: color-mix(in oklch, var(--bone) 75%, transparent);
+  font: 500 14px var(--font-geist);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 180ms var(--ease-standard);
+}
+.btn-tertiary:hover {
+  color: var(--ember);
+}
+
+/* ── Inputs ─────────────────────────────────────────────────────────── */
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--smoke);
+  color: var(--parchment);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font: 17px var(--font-geist);
+  transition:
+    border-color 180ms var(--ease-standard),
+    box-shadow 180ms var(--ease-standard);
+}
+.input::placeholder {
+  color: color-mix(in oklch, var(--bone) 55%, transparent);
+}
+.input:focus {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 1px var(--ember);
+}
+
+/* ── Pairings chip ──────────────────────────────────────────────────── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  background: color-mix(in oklch, var(--smoke) 70%, var(--midnight));
+  color: var(--bone);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font: 500 13px var(--font-geist);
+  letter-spacing: -0.005em;
+}
+
+/* ── Spinner ────────────────────────────────────────────────────────── */
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Section dividers ───────────────────────────────────────────────── */
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 24px 0;
+}
+
+/* ── App container ──────────────────────────────────────────────────── */
+
+.app-shell {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}

@@ -1,0 +1,126 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { CellarEntry, Depth, Mode, PocketSommOutput, ScanResult, User } from './types';
+
+// Global frontend state. The store holds:
+// - The current user (or null if anonymous)
+// - The cellar (loaded once on app boot)
+// - The active home/mode/depth selections
+// - The active result we're displaying (so /result has something to show)
+// - A pending unsaved entry waiting for auth (the "save while logged out"
+//   pattern from the spec)
+// - The film grain / theme preference (persisted in localStorage)
+
+interface PendingSave {
+  // What the user wanted to save before they hit auth. Re-fired after auth.
+  payload: Parameters<typeof import('./api').api.saveCellarEntry>[0];
+}
+
+interface Store {
+  // Identity
+  user: User | null;
+  cellarCount: number;
+  // True once the initial auth-state-changed callback has fired. Until this
+  // is true, route components shouldn't make decisions based on user being
+  // null (it just means we don't know yet). Prevents the cellar empty-state
+  // flashing for an authenticated user during boot.
+  booted: boolean;
+  setBooted: (b: boolean) => void;
+  setUser: (user: User | null, cellarCount?: number) => void;
+
+  // Cellar (loaded once, mutated optimistically)
+  cellar: CellarEntry[];
+  setCellar: (entries: CellarEntry[]) => void;
+  upsertEntry: (entry: CellarEntry) => void;
+  removeEntry: (id: string) => void;
+  patchEntry: (id: string, patch: Partial<CellarEntry>) => void;
+
+  // Home preferences
+  depth: Depth;
+  setDepth: (d: Depth) => void;
+  mode: Mode;
+  setMode: (m: Mode) => void;
+
+  // Theme
+  theme: 'midnight' | 'day';
+  toggleTheme: () => void;
+
+  // Active result / scan
+  pocketSommResult: PocketSommOutput | null;
+  scanResult: ScanResult | null;
+  capturedImageUrl: string | null;
+  setPocketSommResult: (r: PocketSommOutput | null) => void;
+  setScanResult: (r: ScanResult | null) => void;
+  setCapturedImageUrl: (u: string | null) => void;
+
+  // Pending save through auth
+  pendingSave: PendingSave | null;
+  setPendingSave: (s: PendingSave | null) => void;
+
+  // First-launch flag
+  hasSeenWelcome: boolean;
+  markWelcomeSeen: () => void;
+}
+
+export const useStore = create<Store>()(
+  persist(
+    (set) => ({
+      user: null,
+      cellarCount: 0,
+      booted: false,
+      setBooted: (b) => set({ booted: b }),
+      setUser: (user, cellarCount) =>
+        set((s) => ({ user, cellarCount: typeof cellarCount === 'number' ? cellarCount : s.cellarCount })),
+
+      cellar: [],
+      setCellar: (entries) =>
+        set({ cellar: entries.slice().sort((a, b) => b.savedAt - a.savedAt), cellarCount: entries.length }),
+      upsertEntry: (entry) =>
+        set((s) => {
+          const idx = s.cellar.findIndex((e) => e.id === entry.id);
+          const next = idx >= 0 ? s.cellar.map((e, i) => (i === idx ? entry : e)) : [entry, ...s.cellar];
+          return { cellar: next, cellarCount: next.length };
+        }),
+      removeEntry: (id) =>
+        set((s) => {
+          const next = s.cellar.filter((e) => e.id !== id);
+          return { cellar: next, cellarCount: next.length };
+        }),
+      patchEntry: (id, patch) =>
+        set((s) => ({
+          cellar: s.cellar.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+        })),
+
+      depth: 'enthusiast',
+      setDepth: (d) => set({ depth: d }),
+      mode: 'somm',
+      setMode: (m) => set({ mode: m }),
+
+      theme: 'midnight',
+      toggleTheme: () => set((s) => ({ theme: s.theme === 'midnight' ? 'day' : 'midnight' })),
+
+      pocketSommResult: null,
+      scanResult: null,
+      capturedImageUrl: null,
+      setPocketSommResult: (r) => set({ pocketSommResult: r }),
+      setScanResult: (r) => set({ scanResult: r }),
+      setCapturedImageUrl: (u) => set({ capturedImageUrl: u }),
+
+      pendingSave: null,
+      setPendingSave: (s) => set({ pendingSave: s }),
+
+      hasSeenWelcome: false,
+      markWelcomeSeen: () => set({ hasSeenWelcome: true }),
+    }),
+    {
+      name: 'sommsavvy-store',
+      // Only persist a small slice. The cellar and live results stay in
+      // memory; re-fetched on boot.
+      partialize: (s) => ({
+        depth: s.depth,
+        theme: s.theme,
+        hasSeenWelcome: s.hasSeenWelcome,
+      }),
+    },
+  ),
+);

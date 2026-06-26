@@ -1,0 +1,140 @@
+{
+  "appId": "d7606bc1-d378-4edd-bdab-cbba6e892eac",
+  "name": "SommSavvy",
+  "description": "A pocket sommelier for wine, beer, and spirits. Photo, voice, or text — recommendations and bottle analysis with a personal cellar that learns your taste.",
+  "auth": {
+    "enabled": true,
+    "methods": [
+      "email-code"
+    ],
+    "table": {
+      "name": "users",
+      "columns": {
+        "email": "email"
+      }
+    }
+  },
+  "roles": [],
+  "tables": [
+    {
+      "name": "users",
+      "path": "dist/methods/src/tables/users.ts",
+      "export": "Users"
+    },
+    {
+      "name": "cellar_entries",
+      "path": "dist/methods/src/tables/cellarEntries.ts",
+      "export": "CellarEntries"
+    }
+  ],
+  "methods": [
+    {
+      "id": "pocket-somm",
+      "name": "Pocket Somm",
+      "path": "dist/methods/src/pocketSomm.ts",
+      "export": "pocketSomm"
+    },
+    {
+      "id": "reverse-scan",
+      "name": "Reverse Scan",
+      "path": "dist/methods/src/reverseScan.ts",
+      "export": "reverseScan"
+    },
+    {
+      "id": "transcribe-voice",
+      "name": "Transcribe Voice",
+      "path": "dist/methods/src/transcribeVoice.ts",
+      "export": "transcribeVoice"
+    },
+    {
+      "id": "save-cellar-entry",
+      "name": "Save Cellar Entry",
+      "path": "dist/methods/src/saveCellarEntry.ts",
+      "export": "saveCellarEntry"
+    },
+    {
+      "id": "list-cellar",
+      "name": "List Cellar",
+      "path": "dist/methods/src/listCellar.ts",
+      "export": "listCellar"
+    },
+    {
+      "id": "get-entry",
+      "name": "Get Entry",
+      "path": "dist/methods/src/getEntry.ts",
+      "export": "getEntry"
+    },
+    {
+      "id": "update-cellar-entry",
+      "name": "Update Cellar Entry",
+      "path": "dist/methods/src/updateCellarEntry.ts",
+      "export": "updateCellarEntry"
+    },
+    {
+      "id": "remove-cellar-entry",
+      "name": "Remove Cellar Entry",
+      "path": "dist/methods/src/removeCellarEntry.ts",
+      "export": "removeCellarEntry"
+    },
+    {
+      "id": "get-me",
+      "name": "Get Me",
+      "path": "dist/methods/src/getMe.ts",
+      "export": "getMe"
+    },
+    {
+      "id": "update-profile",
+      "name": "Update Profile",
+      "path": "dist/methods/src/updateProfile.ts",
+      "export": "updateProfile"
+    },
+    {
+      "id": "regenerate-taste-summary",
+      "name": "Regenerate Taste Summary",
+      "path": "dist/methods/src/regenerateTasteSummary.ts",
+      "export": "regenerateTasteSummary"
+    }
+  ],
+  "interfaces": [
+    {
+      "type": "web",
+      "path": "dist/interfaces/web/web.json"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "empty-anonymous",
+      "name": "Empty (anonymous)",
+      "description": "Blank database. Open the app fresh as an anonymous visitor.",
+      "path": "dist/methods/.scenarios/emptyAnonymous.ts",
+      "export": "emptyAnonymous",
+      "roles": []
+    },
+    {
+      "id": "enthusiast-with-cellar",
+      "name": "Enthusiast with cellar",
+      "description": "Sloane, an enthusiast with a populated cellar across wine, beer, and spirits.",
+      "path": "dist/methods/.scenarios/enthusiastWithCellar.ts",
+      "export": "enthusiastWithCellar",
+      "roles": []
+    },
+    {
+      "id": "beginner-fresh-cellar",
+      "name": "Beginner, fresh cellar",
+      "description": "Theo, a newly signed-up beginner with a few entries.",
+      "path": "dist/methods/.scenarios/beginnerFreshCellar.ts",
+      "export": "beginnerFreshCellar",
+      "roles": []
+    },
+    {
+      "id": "expert-deep-cellar",
+      "name": "Expert, deep cellar",
+      "description": "Ines, a serious collector with depth across wine and a curated spirits shelf.",
+      "path": "dist/methods/.scenarios/expertDeepCellar.ts",
+      "export": "expertDeepCellar",
+      "roles": []
+    }
+  ],
+  "iconUrl": "https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/e13f234a-ab5f-4a89-b3d8-4ad26c7dc657.png",
+  "openGraphShareImageUrl": "https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/4053baf9-9572-4cf3-98f3-acf8fc796ac8.png?w=2400&fm=jpg&q=88"
+}

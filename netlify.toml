@@ -1,0 +1,16 @@
+# Netlify build config for the SommSavvy frontend.
+# The frontend lives in web/; set the base there so Netlify builds the right
+# project. VITE_API_BASE_URL must be set in Netlify's environment variables to
+# point at the Railway backend URL.
+
+[build]
+  base = "web"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback: the app uses client-side routing (wouter), so every path must
+# serve index.html and let the router handle it.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

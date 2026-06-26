@@ -1,0 +1,58 @@
+{
+  "pitch": "src/roadmap/pitch.html",
+  "lanes": [
+    {
+      "name": "The Living Cellar",
+      "narrative": "The cellar is first a taste journal, second a bottle inventory — build the intelligence for both in that order, and deliver it through the email channel already in hand.",
+      "items": [
+        "mvp.md",
+        "taste-seeding.md",
+        "tasted-owned.md",
+        "cellar-intelligence.md",
+        "opening-notes.md",
+        "drinking-windows.md",
+        "vintage-intelligence.md",
+        "year-in-review.md",
+        "session-history.md",
+        "cellar-export.md"
+      ]
+    },
+    {
+      "name": "The Hunt",
+      "narrative": "Two halves of the same obsession — a passive radar that fires when the camera finds a wanted bottle, and an active agent that goes to work when you cannot wait to stumble.",
+      "items": [
+        "hunt-list.md",
+        "pursuit.md"
+      ]
+    },
+    {
+      "name": "At the Table",
+      "narrative": "Expand Pocket Somm from single-dish pairing into full dining intelligence — from a restaurant wine list to a dinner party program to an open conversation about any bottle.",
+      "items": [
+        "restaurant-scanner.md",
+        "pairing-planner.md",
+        "somm-chat.md"
+      ]
+    },
+    {
+      "name": "The Home Bar",
+      "narrative": "Move SommSavvy into the home — a living shelf inventory that unlocks a creative cocktail partner who works with what is actually on the shelf.",
+      "items": [
+        "home-bar-inventory.md",
+        "cocktail-studio.md"
+      ]
+    },
+    {
+      "name": "Know Your Drink",
+      "narrative": "Build the reference layer an enthusiast actually reaches for — contextual lessons that assume existing knowledge, definitive regional writing, and immersive pour-along experiences.",
+      "items": [
+        "tasting-school.md",
+        "regional-guides.md",
+        "live-tastings.md"
+      ]
+    }
+  ],
+  "standalone": [
+    "share-cards.md"
+  ]
+}

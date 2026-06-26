@@ -1,0 +1,83 @@
+/* Brand tokens, derived from src/interfaces/@brand. */
+
+:root {
+  /* Colors (dark mode, default) */
+  --midnight: #14100d;
+  --smoke: #1f1a15;
+  --parchment: #f2e9d4;
+  --ember: #e89b3c;
+  --bordeaux: #7a1f2b;
+  --verde: #7c8a5e;
+  --bone: #c9bfa8;
+
+  /* Borders, derived */
+  --border-subtle: color-mix(in oklch, var(--bone) 12%, transparent);
+  --border-strong: color-mix(in oklch, var(--bone) 22%, transparent);
+
+  /* Ownership semantics. The palette has a strict three-way status language:
+     Ember = interactive (buttons, active filters), Verde = saved/tasted
+     confirmation, Bone = owned ("in the rack") — a quiet stated fact, never
+     an achievement. The ownership switch's on-state lights the same Bone that
+     appears as the dot on a tile, so the control and the marker teach each
+     other. These reference theme vars, so they invert correctly in day mode. */
+  --owned: var(--bone);
+  --switch-track-off: color-mix(in oklch, var(--midnight) 45%, var(--smoke));
+  --switch-track-on: var(--owned);
+  --switch-knob-off: color-mix(in oklch, var(--bone) 28%, transparent);
+  --switch-knob-on: var(--midnight);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* Spacing scale (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+
+  /* Elevation, warmth not shadow */
+  --lift-1: 0 1px 0 0 color-mix(in oklch, var(--bone) 8%, transparent) inset;
+  --lift-2:
+    0 12px 32px color-mix(in oklch, var(--midnight) 70%, transparent),
+    0 1px 0 0 color-mix(in oklch, var(--bone) 6%, transparent) inset;
+  --glow-ember: 0 0 24px color-mix(in oklch, var(--ember) 35%, transparent);
+
+  /* Easing curves */
+  --ease-standard: cubic-bezier(0.32, 0.72, 0.24, 1);
+  --ease-entrance: cubic-bezier(0.18, 0.89, 0.32, 1.05);
+  --ease-exit: cubic-bezier(0.4, 0, 0.6, 1);
+  --ease-glide: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Type families */
+  --font-rowan: 'Rowan', 'Georgia', serif;
+  --font-geist: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Day mode (light palette inversion) */
+[data-theme='day'] {
+  --midnight: #f2e9d4;
+  --smoke: #e8dfc8;
+  --parchment: #14100d;
+  --ember: #b86f1a;
+  --bordeaux: #6b1822;
+  --verde: #5c6b43;
+  --bone: #3a3327;
+
+  --border-subtle: color-mix(in oklch, var(--bone) 14%, transparent);
+  --border-strong: color-mix(in oklch, var(--bone) 26%, transparent);
+
+  --lift-1: 0 1px 0 0 color-mix(in oklch, var(--bone) 6%, transparent);
+  --lift-2:
+    0 8px 24px color-mix(in oklch, var(--bordeaux) 12%, transparent),
+    0 1px 0 0 color-mix(in oklch, var(--bone) 8%, transparent);
+  --glow-ember: 0 0 24px color-mix(in oklch, var(--ember) 25%, transparent);
+}

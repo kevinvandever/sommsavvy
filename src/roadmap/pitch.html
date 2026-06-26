@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SommSavvy — For people who already care about what's in their glass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=rowan@300,400,500,600,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --midnight: #14100D;
+  --smoke: #1F1A15;
+  --smoke-2: #261E16;
+  --parchment: #F2E9D4;
+  --ember: #E89B3C;
+  --ember-soft: rgba(232, 155, 60, 0.18);
+  --bordeaux: #7A1F2B;
+  --verde: #7C8A5E;
+  --bone: #C9BFA8;
+  --bone-dim: rgba(201, 191, 168, 0.62);
+  --bone-faint: rgba(201, 191, 168, 0.22);
+  --hairline: rgba(201, 191, 168, 0.16);
+
+  --serif: 'Rowan', ui-serif, Georgia, serif;
+  --sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+}
+
+html, body {
+  height: 100svh;
+  overflow: hidden;
+  background: var(--midnight);
+  font-family: var(--sans);
+  color: var(--bone);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.deck {
+  display: flex;
+  width: max-content;
+  height: 100svh;
+}
+
+.slide {
+  flex: 0 0 100vw;
+  width: 100vw;
+  height: 100svh;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  background: var(--midnight);
+}
+
+.slide-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* ===== Typographic primitives ===== */
+.eyebrow {
+  font-family: var(--sans);
+  font-size: clamp(10px, 0.78vw, 12px);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ember);
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--ember);
+  display: inline-block;
+}
+
+p.body {
+  font-family: var(--sans);
+  font-size: clamp(14.5px, 1.05vw, 16.5px);
+  font-weight: 400;
+  line-height: 1.62;
+  color: var(--bone-dim);
+}
+p.body strong { color: var(--bone); font-weight: 500; }
+p.body em { font-family: var(--serif); font-style: italic; color: var(--ember); font-weight: 400; }
+
+/* ===== Slide chrome ===== */
+.slide-no {
+  position: absolute;
+  bottom: clamp(20px, 3vw, 36px);
+  right: clamp(20px, 3vw, 36px);
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--bone-faint);
+  z-index: 10;
+}
+.slide-mark {
+  position: absolute;
+  bottom: clamp(20px, 3vw, 36px);
+  left: clamp(20px, 3vw, 36px);
+  font-family: var(--serif);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  color: var(--bone-dim);
+  z-index: 10;
+  font-weight: 400;
+}
+.slide-mark em { font-style: italic; color: var(--ember); }
+
+/* ===== Progress ===== */
+.progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  gap: 4px;
+  padding: 14px 20px;
+  z-index: 100;
+}
+.progress-seg {
+  flex: 1;
+  height: 2px;
+  background: rgba(201, 191, 168, 0.12);
+  overflow: hidden;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.progress-seg .fill {
+  height: 100%;
+  width: 0%;
+  background: var(--ember);
+  transition: width 0.5s ease;
+}
+.progress-seg.done .fill { width: 100%; }
+.progress-seg.active .fill { width: 100%; }
+
+/* ===== Tap zones ===== */
+.tap-zones {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  z-index: 50;
+}
+.tap-zone { height: 100%; -webkit-tap-highlight-color: transparent; }
+.tap-prev { width: 33.333%; }
+.tap-next { width: 66.667%; }
+
+/* ===== Chevrons ===== */
+.chevron {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: rgba(201, 191, 168, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(201, 191, 168, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, opacity 0.3s, border-color 0.2s;
+}
+.chevron:hover {
+  background: rgba(232, 155, 60, 0.14);
+  border-color: rgba(232, 155, 60, 0.36);
+  transform: translateY(-50%) scale(1.06);
+}
+.chevron:active { transform: translateY(-50%) scale(0.96); }
+.chevron svg { width: 16px; height: 16px; stroke: var(--bone); stroke-width: 1.5; fill: none; }
+.chevron-prev { left: 18px; }
+.chevron-next { right: 18px; }
+.chevron.hidden { opacity: 0; pointer-events: none; }
+
+@media (max-width: 768px) {
+  .chevron { width: 34px; height: 34px; }
+  .chevron svg { width: 14px; height: 14px; }
+  .chevron-prev { left: 8px; }
+  .chevron-next { right: 8px; }
+}
+
+/* ===== Reveal ===== */
+[data-reveal] { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  [data-reveal] { opacity: 1 !important; }
+}
+
+/* ============================================================
+   SLIDE 1 — HERO
+   ============================================================ */
+.s1 { display: grid; grid-template-columns: 0.92fr 1.08fr; }
+.s1-image {
+  position: relative;
+  overflow: hidden;
+  background: #0b0907;
+}
+.s1-image img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 35%;
+  filter: saturate(1.05) contrast(1.04);
+}
+.s1-image::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, transparent 55%, var(--midnight) 100%),
+    radial-gradient(ellipse at 30% 60%, transparent 30%, rgba(20,16,13,0.4) 100%);
+  pointer-events: none;
+}
+.s1-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(36px, 6vw, 96px) clamp(36px, 6vw, 96px) clamp(36px, 6vw, 96px) clamp(20px, 3vw, 56px);
+  gap: clamp(20px, 2.4vw, 32px);
+  position: relative;
+}
+.s1-wordmark {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(64px, 11vw, 168px);
+  letter-spacing: -0.028em;
+  line-height: 0.92;
+  color: var(--bone);
+}
+.s1-wordmark .savvy {
+  font-style: italic;
+  color: var(--ember);
+}
+.s1-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(22px, 2.6vw, 36px);
+  line-height: 1.18;
+  color: var(--bone);
+  letter-spacing: -0.012em;
+  max-width: 22ch;
+}
+.s1-tagline em { font-style: italic; color: var(--ember); }
+.s1-subline {
+  font-family: var(--sans);
+  font-size: clamp(13px, 0.95vw, 15px);
+  line-height: 1.55;
+  color: var(--bone-dim);
+  max-width: 38ch;
+  letter-spacing: 0.005em;
+}
+.s1-rule {
+  width: 56px;
+  height: 1px;
+  background: var(--ember);
+  opacity: 0.7;
+}
+
+@media (max-width: 820px) {
+  .s1 { grid-template-columns: 1fr; grid-template-rows: 40% 60%; }
+  .s1-image::after {
+    background: linear-gradient(180deg, transparent 45%, var(--midnight) 100%);
+  }
+  .s1-content { padding: clamp(20px, 5vw, 32px); gap: 16px; }
+}
+
+/* ============================================================
+   SLIDE 2 — THE PROBLEM
+   ============================================================ */
+.s2 {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(48px, 6vw, 96px);
+  gap: clamp(28px, 3.5vw, 48px);
+  justify-content: center;
+}
+.s2-header { display: flex; flex-direction: column; gap: 18px; max-width: 1100px; }
+.s2-header h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(34px, 5vw, 76px);
+  letter-spacing: -0.024em;
+  line-height: 1.02;
+  color: var(--bone);
+  max-width: 22ch;
+}
+.s2-header h2 em { font-style: italic; color: var(--ember); }
+.s2-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--hairline);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+.gap-col {
+  background: var(--midnight);
+  padding: clamp(28px, 3vw, 44px) clamp(20px, 2.4vw, 36px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 280px;
+  position: relative;
+}
+.gap-col.gap-empty {
+  background: linear-gradient(180deg, rgba(232,155,60,0.05), rgba(232,155,60,0.02));
+}
+.gap-eyebrow {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.gap-empty .gap-eyebrow { color: var(--ember); }
+.gap-col h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(20px, 1.7vw, 26px);
+  line-height: 1.18;
+  letter-spacing: -0.012em;
+  color: var(--bone);
+}
+.gap-col h3 em { font-style: italic; color: var(--ember); }
+.gap-col p {
+  font-size: clamp(13px, 0.92vw, 14.5px);
+  line-height: 1.6;
+  color: var(--bone-dim);
+  max-width: 32ch;
+}
+.gap-tag {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+.gap-tag .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--bone-faint); }
+.gap-empty .gap-tag { color: var(--ember); border-top-color: rgba(232,155,60,0.3); }
+.gap-empty .gap-tag .dot { background: var(--ember); box-shadow: 0 0 8px var(--ember); }
+
+@media (max-width: 900px) {
+  .s2-grid { grid-template-columns: 1fr; }
+  .gap-col { min-height: auto; }
+}
+
+/* ============================================================
+   SLIDE 3 — THE PERSON
+   ============================================================ */
+.s3 {
+  display: flex;
+  align-items: center;
+  padding: clamp(48px, 7vw, 120px);
+  position: relative;
+}
+.s3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 30%, rgba(232,155,60,0.06), transparent 60%);
+  pointer-events: none;
+}
+.s3-content {
+  position: relative;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: clamp(40px, 6vw, 96px);
+  align-items: center;
+}
+.s3-left { display: flex; flex-direction: column; gap: clamp(24px, 3vw, 36px); }
+.s3-headline {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(40px, 6.4vw, 108px);
+  letter-spacing: -0.03em;
+  line-height: 0.96;
+  color: var(--bone);
+  max-width: 12ch;
+}
+.s3-headline em { font-style: italic; color: var(--ember); }
+.s3-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-left: 1px solid var(--hairline);
+  padding-left: clamp(28px, 4vw, 56px);
+}
+.s3-right p { max-width: 48ch; }
+.s3-stamp {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.s3-stamp span:not(.sep) { color: var(--bone-dim); }
+.s3-stamp .accent { color: var(--ember); }
+.s3-stamp .sep { color: var(--bone-faint); }
+
+@media (max-width: 900px) {
+  .s3-content { grid-template-columns: 1fr; gap: 28px; }
+  .s3-right { border-left: none; padding-left: 0; border-top: 1px solid var(--hairline); padding-top: 24px; }
+}
+
+/* ============================================================
+   SLIDE 4 — SOMMSAVVY
+   ============================================================ */
+.s4 { display: grid; grid-template-columns: 1fr 0.5fr; }
+.s4-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(40px, 7vw, 120px);
+  gap: clamp(20px, 2.6vw, 32px);
+  max-width: 920px;
+}
+.s4-headline {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(36px, 5vw, 78px);
+  letter-spacing: -0.025em;
+  line-height: 1.0;
+  color: var(--bone);
+  max-width: 16ch;
+}
+.s4-headline em { font-style: italic; color: var(--ember); }
+.s4-paras { display: flex; flex-direction: column; gap: 14px; max-width: 56ch; }
+.s4-image {
+  position: relative;
+  overflow: hidden;
+}
+.s4-image img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: 60% 50%;
+  filter: contrast(1.05) saturate(0.95);
+}
+.s4-image::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--midnight) 0%, transparent 22%, transparent 100%);
+  pointer-events: none;
+}
+
+.s4-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.mode-chip {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  color: var(--bone-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.mode-chip .glyph {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--ember);
+  box-shadow: 0 0 6px rgba(232,155,60,0.6);
+}
+
+@media (max-width: 900px) {
+  .s4 { grid-template-columns: 1fr; grid-template-rows: 1fr 26%; }
+  .s4-image::after {
+    background: linear-gradient(180deg, var(--midnight) 0%, transparent 30%);
+  }
+}
+
+/* ============================================================
+   SLIDE 5 — THREE PILLARS
+   ============================================================ */
+.s5 {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(56px, 7vw, 120px) clamp(40px, 6vw, 96px);
+  justify-content: center;
+  gap: clamp(36px, 4vw, 64px);
+}
+.s5-header {
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 920px;
+}
+.s5-header h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(32px, 4.4vw, 64px);
+  letter-spacing: -0.022em;
+  line-height: 1.04;
+  color: var(--bone);
+}
+.s5-header h2 em { font-style: italic; color: var(--ember); }
+.s5-intro {
+  font-family: var(--sans);
+  font-size: clamp(14px, 1vw, 16px);
+  line-height: 1.55;
+  color: var(--bone-dim);
+  max-width: 56ch;
+  letter-spacing: 0.005em;
+  margin-top: 2px;
+}
+.s5-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(28px, 4vw, 64px);
+  border-top: 1px solid var(--hairline);
+  padding-top: clamp(28px, 3.5vw, 48px);
+}
+.pillar { display: flex; flex-direction: column; gap: 14px; }
+.pillar-num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(36px, 4.4vw, 60px);
+  line-height: 1;
+  color: var(--ember);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.pillar-eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+.pillar h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(20px, 1.7vw, 26px);
+  line-height: 1.18;
+  letter-spacing: -0.012em;
+  color: var(--bone);
+  max-width: 16ch;
+}
+.pillar h3 em { font-style: italic; color: var(--ember); }
+.pillar p {
+  font-size: clamp(13.5px, 0.92vw, 15px);
+  line-height: 1.6;
+  color: var(--bone-dim);
+  max-width: 32ch;
+}
+
+@media (max-width: 900px) {
+  .s5-pillars { grid-template-columns: 1fr; gap: 24px; }
+  .pillar { padding-bottom: 20px; border-bottom: 1px solid var(--hairline); }
+  .pillar:last-child { border-bottom: none; padding-bottom: 0; }
+  .pillar-num { font-size: 32px; }
+}
+
+/* ============================================================
+   SLIDE 6 — TASTE PROFILE
+   ============================================================ */
+.s6 {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(48px, 7vw, 120px);
+  gap: clamp(28px, 3.5vw, 56px);
+  position: relative;
+}
+.s6::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 75% 65%, rgba(232,155,60,0.08), transparent 55%);
+  pointer-events: none;
+}
+.s6-inner { position: relative; max-width: 1500px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: clamp(28px, 3.5vw, 56px); }
+.s6-statement {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1vw, 16px);
+}
+.s6-line {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(40px, 7vw, 120px);
+  line-height: 0.96;
+  letter-spacing: -0.03em;
+  color: var(--bone);
+}
+.s6-line.italic {
+  font-style: italic;
+  color: var(--ember);
+}
+.s6-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(40px, 5vw, 80px);
+  align-items: start;
+  border-top: 1px solid var(--hairline);
+  padding-top: clamp(20px, 2.5vw, 36px);
+  max-width: 1100px;
+}
+.s6-counter {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(48px, 5vw, 72px);
+  line-height: 1;
+  color: var(--ember);
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+.s6-counter sup {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 0.32em;
+  letter-spacing: 0.18em;
+  vertical-align: 1.6em;
+  color: var(--bone-dim);
+  margin-left: 4px;
+}
+.s6-body p { max-width: 60ch; }
+.s6-portrait {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(15px, 1.1vw, 18px);
+  line-height: 1.5;
+  color: var(--bone);
+  padding-left: 14px;
+  border-left: 2px solid var(--ember);
+  max-width: 56ch;
+  margin-top: 8px;
+}
+
+@media (max-width: 700px) {
+  .s6-body { grid-template-columns: 1fr; gap: 16px; }
+  .s6-counter { font-size: 44px; }
+}
+
+/* ============================================================
+   SLIDE 7 — LIVE
+   ============================================================ */
+.s7 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.s7-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.s7-bg img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 55%;
+  opacity: 0.32;
+  filter: contrast(1.05) saturate(0.95);
+}
+.s7-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 60%, rgba(232,155,60,0.14), transparent 55%),
+    linear-gradient(180deg, rgba(20,16,13,0.5) 0%, rgba(20,16,13,0.85) 100%);
+}
+.s7-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1280px;
+  padding: clamp(40px, 6vw, 96px);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: clamp(40px, 6vw, 80px);
+  align-items: center;
+}
+.s7-left { display: flex; flex-direction: column; gap: clamp(20px, 2.4vw, 32px); }
+.s7-mark {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(56px, 8.4vw, 132px);
+  letter-spacing: -0.028em;
+  line-height: 0.94;
+  color: var(--bone);
+  max-width: 12ch;
+}
+.s7-mark em { font-style: italic; color: var(--ember); }
+.s7-meta {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.s7-meta .pulse {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--verde);
+  margin-right: 10px;
+  vertical-align: 1px;
+  box-shadow: 0 0 10px var(--verde);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.s7-right {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 2vw, 28px);
+  border-left: 1px solid var(--hairline);
+  padding-left: clamp(28px, 4vw, 48px);
+}
+.s7-status { display: flex; flex-direction: column; gap: 0; }
+.s7-status-header {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ember);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.s7-status-header::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--ember);
+  display: inline-block;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline);
+  gap: 16px;
+}
+.status-row:last-child { border-bottom: none; }
+.status-label {
+  font-family: var(--sans);
+  font-size: clamp(13px, 0.95vw, 15px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--bone);
+}
+.status-value {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--verde);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-value::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--verde);
+  box-shadow: 0 0 6px rgba(124, 138, 94, 0.6);
+}
+.s7-line {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(17px, 1.3vw, 22px);
+  line-height: 1.4;
+  color: var(--bone);
+  letter-spacing: -0.005em;
+  max-width: 36ch;
+}
+.s7-line .quiet {
+  color: var(--bone-dim);
+  font-style: normal;
+  font-family: var(--sans);
+  font-size: 0.78em;
+  display: block;
+  margin-top: 6px;
+  letter-spacing: 0.005em;
+}
+.s7-bridge {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(13.5px, 0.95vw, 15.5px);
+  line-height: 1.45;
+  color: var(--bone);
+  letter-spacing: -0.003em;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+  max-width: 38ch;
+}
+.s7-bridge .accent { color: var(--ember); font-style: italic; }
+
+@media (max-width: 900px) {
+  .s7-content { grid-template-columns: 1fr; gap: 28px; padding: 32px; }
+  .s7-right { border-left: none; padding-left: 0; border-top: 1px solid var(--hairline); padding-top: 22px; }
+}
+
+/* ============================================================
+   SLIDE 8 — WHERE THE CELLAR GOES
+   ============================================================ */
+.s8 {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(48px, 6vw, 96px);
+  gap: clamp(24px, 3vw, 40px);
+  justify-content: center;
+}
+.s8-header { display: flex; flex-direction: column; gap: 16px; max-width: 980px; }
+.s8-header h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(30px, 4.2vw, 64px);
+  letter-spacing: -0.022em;
+  line-height: 1.02;
+  color: var(--bone);
+  max-width: 20ch;
+}
+.s8-header h2 em { font-style: italic; color: var(--ember); }
+.s8-header p { max-width: 62ch; }
+.s8-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.future {
+  background: var(--midnight);
+  padding: clamp(22px, 2.4vw, 34px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: background 0.4s ease;
+}
+.future:hover { background: var(--smoke); }
+.future.future-next {
+  background: linear-gradient(180deg, rgba(232,155,60,0.06), rgba(232,155,60,0.015));
+}
+.future.future-next:hover { background: linear-gradient(180deg, rgba(232,155,60,0.09), rgba(232,155,60,0.03)); }
+.future-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.future-num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(26px, 2.4vw, 36px);
+  line-height: 1;
+  color: var(--ember);
+  letter-spacing: -0.01em;
+}
+.future-badge {
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ember);
+  padding: 5px 9px 4px;
+  border: 1px solid rgba(232, 155, 60, 0.4);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1;
+}
+.future-badge::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--ember);
+  box-shadow: 0 0 8px var(--ember);
+}
+.future-eyebrow {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.future-next .future-eyebrow { color: var(--ember); }
+.future h3 {
+  font-family: var(--serif);
+  font-size: clamp(20px, 1.8vw, 28px);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.14;
+  letter-spacing: -0.014em;
+  color: var(--bone);
+  max-width: 22ch;
+}
+.future h3 em { font-style: italic; color: var(--ember); }
+.future p {
+  font-size: clamp(13px, 0.9vw, 14px);
+  line-height: 1.55;
+  color: var(--bone-dim);
+  max-width: 38ch;
+}
+
+@media (max-width: 900px) {
+  .s8-grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
+  .future { padding: 18px; gap: 8px; }
+  .future-num { font-size: 22px; }
+  .future h3 { font-size: 18px; }
+  .future p { font-size: 12.5px; line-height: 1.5; }
+}
+
+/* ============================================================
+   SLIDE 9 — AT THE TABLE
+   ============================================================ */
+.s9 {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: stretch;
+}
+.s9-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(40px, 7vw, 96px);
+  gap: clamp(20px, 2.6vw, 32px);
+}
+.s9-quote {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.32;
+  color: var(--bone-dim);
+  letter-spacing: -0.01em;
+  max-width: 28ch;
+  position: relative;
+  padding-left: clamp(18px, 2vw, 28px);
+}
+.s9-quote::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 8px; bottom: 8px;
+  width: 2px;
+  background: var(--ember);
+}
+.s9-headline {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(34px, 5vw, 76px);
+  letter-spacing: -0.024em;
+  line-height: 1.0;
+  color: var(--bone);
+  max-width: 18ch;
+}
+.s9-headline em { font-style: italic; color: var(--ember); }
+.s9-paras { display: flex; flex-direction: column; gap: 12px; max-width: 50ch; }
+.s9-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 4px;
+  border-top: 1px solid var(--hairline);
+}
+.tier {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--hairline);
+  align-items: baseline;
+}
+.tier-label {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+.tier-text {
+  font-family: var(--serif);
+  font-size: clamp(15px, 1.15vw, 18px);
+  line-height: 1.35;
+  color: var(--bone);
+  font-style: italic;
+}
+.s9-image {
+  position: relative;
+  overflow: hidden;
+  background: #0b0907;
+}
+.s9-image img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 50%;
+  filter: contrast(1.06) saturate(1.02);
+}
+.s9-image::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--midnight) 0%, transparent 18%, transparent 82%, rgba(20,16,13,0.4) 100%);
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .s9 { grid-template-columns: 1fr; grid-template-rows: 1fr 24%; }
+  .s9-image::after { background: linear-gradient(180deg, var(--midnight) 0%, transparent 25%); }
+  .tier { grid-template-columns: 110px 1fr; }
+}
+
+/* ============================================================
+   SLIDE 10 — THE REFERENCE
+   ============================================================ */
+.s10 {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(48px, 6vw, 96px);
+  gap: clamp(32px, 4vw, 56px);
+  justify-content: center;
+}
+.s10-header { display: flex; flex-direction: column; gap: 16px; max-width: 920px; }
+.s10-header h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(32px, 4.4vw, 64px);
+  letter-spacing: -0.022em;
+  line-height: 1.04;
+  color: var(--bone);
+}
+.s10-header h2 em { font-style: italic; color: var(--ember); }
+.s10-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--hairline);
+}
+.ref-row {
+  display: grid;
+  grid-template-columns: clamp(80px, 8vw, 120px) 1fr 1.4fr;
+  gap: clamp(24px, 4vw, 56px);
+  padding: clamp(22px, 2.6vw, 32px) 0;
+  border-bottom: 1px solid var(--hairline);
+  align-items: start;
+}
+.ref-num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(28px, 3vw, 44px);
+  color: var(--ember);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.ref-name {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ref-eyebrow {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.ref-name h3 {
+  font-family: var(--serif);
+  font-size: clamp(20px, 1.9vw, 30px);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.014em;
+  color: var(--bone);
+}
+.ref-name h3 em { font-style: italic; color: var(--ember); }
+.ref-desc {
+  font-size: clamp(13.5px, 0.95vw, 15px);
+  line-height: 1.55;
+  color: var(--bone-dim);
+}
+.ref-desc em { font-family: var(--serif); font-style: italic; color: var(--bone); font-size: 1.04em; }
+
+@media (max-width: 900px) {
+  .ref-row { grid-template-columns: 1fr; gap: 8px; padding: 18px 0; }
+  .ref-num { font-size: 24px; }
+}
+
+/* ============================================================
+   SLIDE 11 — THE OPPORTUNITY
+   ============================================================ */
+.s11 {
+  display: flex;
+  align-items: center;
+  padding: clamp(48px, 7vw, 120px);
+  position: relative;
+}
+.s11::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 80%, rgba(232,155,60,0.07), transparent 55%);
+  pointer-events: none;
+}
+.s11-content {
+  position: relative;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: clamp(40px, 6vw, 96px);
+  align-items: center;
+}
+.s11-left { display: flex; flex-direction: column; gap: clamp(20px, 2.5vw, 32px); }
+.s11-headline {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(40px, 5.8vw, 100px);
+  letter-spacing: -0.028em;
+  line-height: 0.96;
+  color: var(--bone);
+  max-width: 14ch;
+}
+.s11-headline em { font-style: italic; color: var(--ember); }
+.s11-kicker {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(19px, 1.7vw, 24px);
+  color: var(--bone);
+  line-height: 1.4;
+  max-width: 32ch;
+}
+.s11-kicker em { color: var(--ember); }
+.s11-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--hairline);
+}
+.stat-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.7fr) 1.3fr;
+  gap: clamp(20px, 2.4vw, 36px);
+  padding: clamp(16px, 2vw, 24px) 0;
+  border-bottom: 1px solid var(--hairline);
+  align-items: baseline;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-num {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(34px, 3.6vw, 54px);
+  line-height: 1;
+  color: var(--bone);
+  letter-spacing: -0.018em;
+}
+.stat-num em { color: var(--ember); font-style: italic; }
+.stat-text {
+  font-family: var(--sans);
+  font-size: clamp(13px, 0.95vw, 15px);
+  line-height: 1.5;
+  color: var(--bone-dim);
+}
+.stat-text strong { color: var(--bone); font-weight: 500; }
+
+@media (max-width: 900px) {
+  .s11-content { grid-template-columns: 1fr; gap: 28px; }
+  .stat-row { grid-template-columns: minmax(110px, 0.6fr) 1fr; gap: 18px; }
+  .stat-num { font-size: 30px; }
+}
+
+/* ============================================================
+   SLIDE 12 — THE VISION
+   ============================================================ */
+.s12 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(40px, 6vw, 96px);
+  position: relative;
+  overflow: hidden;
+}
+.s12-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.s12-bg img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 60%;
+  opacity: 0.55;
+  filter: contrast(1.05) saturate(1.05);
+}
+.s12-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(20,16,13,0.3) 0%, rgba(20,16,13,0.85) 100%),
+    linear-gradient(180deg, rgba(20,16,13,0.7) 0%, rgba(20,16,13,0.5) 50%, rgba(20,16,13,0.92) 100%);
+}
+.s12-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(20px, 2.6vw, 32px);
+  max-width: 940px;
+}
+.s12-eyebrow {
+  font-family: var(--sans);
+  font-size: clamp(10px, 0.85vw, 12px);
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+.s12-wordmark {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(54px, 9vw, 144px);
+  letter-spacing: -0.028em;
+  line-height: 0.94;
+  color: var(--bone);
+}
+.s12-wordmark .savvy { font-style: italic; color: var(--ember); }
+.s12-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(22px, 2.6vw, 36px);
+  line-height: 1.25;
+  color: var(--bone);
+  letter-spacing: -0.01em;
+  max-width: 26ch;
+}
+.s12-tagline em { color: var(--ember); }
+.s12-rule {
+  width: 56px;
+  height: 1px;
+  background: var(--ember);
+  opacity: 0.7;
+}
+.s12-locations {
+  font-family: var(--sans);
+  font-size: clamp(11px, 0.9vw, 13px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  display: flex;
+  gap: clamp(14px, 2vw, 28px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.s12-locations .sep { color: var(--ember); opacity: 0.6; }
+.s12-foot {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+  <!-- ============== SLIDE 1 — HERO ============== -->
+  <div class="slide" data-index="0">
+    <div class="slide-inner s1">
+      <div class="s1-image">
+        <img src="https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/b8d7fb5e-6956-4c45-90e7-673e65290427.png?w=1600&fm=webp" alt="">
+      </div>
+      <div class="s1-content">
+        <span class="eyebrow" data-reveal="0">After hours</span>
+        <h1 class="s1-wordmark" data-reveal="0.15">Somm<span class="savvy">Savvy</span></h1>
+        <div class="s1-rule" data-reveal="0.4"></div>
+        <div class="s1-tagline" data-reveal="0.55">For people who already <em>care</em> about what's in their glass.</div>
+        <p class="s1-subline" data-reveal="0.8">
+          Wine, beer, spirits. Photo, voice, or text. A pocket sommelier — and a cellar that learns your taste.
+        </p>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">01 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 2 — THE PROBLEM ============== -->
+  <div class="slide" data-index="1">
+    <div class="slide-inner s2">
+      <div class="s2-header">
+        <span class="eyebrow" data-reveal="0">The problem</span>
+        <h2 data-reveal="0.15">Two tools exist for people who love drinks. <em>Neither one fits.</em></h2>
+      </div>
+      <div class="s2-grid" data-reveal="0.4">
+        <div class="gap-col">
+          <span class="gap-eyebrow">For professionals</span>
+          <h3>Cold databases.</h3>
+          <p>Sommelier and merchant software. Database-driven. Built for people who get paid to know things. Assumes credentials. Hands you a spreadsheet.</p>
+          <span class="gap-tag"><span class="dot"></span>Already served</span>
+        </div>
+        <div class="gap-col">
+          <span class="gap-eyebrow">For beginners</span>
+          <h3>Stars and flavor wheels.</h3>
+          <p>Simplified. Generic. Built for someone who doesn't know a Gamay from a Grenache. Aimed at first-week curiosity. Never grows up with you.</p>
+          <span class="gap-tag"><span class="dot"></span>Already served</span>
+        </div>
+        <div class="gap-col gap-empty">
+          <span class="gap-eyebrow">For the engaged enthusiast</span>
+          <h3 style="color: var(--ember);"><em>Nobody built it.</em></h3>
+          <p>The person who reads back labels, remembers the bottle from that dinner, sends the photo with a question. The biggest underserved audience in drinks.</p>
+          <span class="gap-tag"><span class="dot"></span>Until now</span>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">02 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 3 — THE PERSON ============== -->
+  <div class="slide" data-index="2">
+    <div class="slide-inner s3">
+      <div class="s3-content">
+        <div class="s3-left">
+          <span class="eyebrow" data-reveal="0">The person</span>
+          <h2 class="s3-headline" data-reveal="0.15">The engaged <em>enthusiast.</em></h2>
+          <div class="s3-stamp" data-reveal="0.35">
+            <span>Not a professional</span>
+            <span class="sep">·</span>
+            <span>Already invested</span>
+          </div>
+        </div>
+        <div class="s3-right">
+          <p class="body" data-reveal="0.5">
+            <strong>Already cares about what's in their glass.</strong> Has opinions about vintages. Keeps a loose mental track of everything they've tasted, and a running list of bottles they're looking for.
+          </p>
+          <p class="body" data-reveal="0.65">
+            Reads back labels. Remembers the bottle from that dinner. Sends a photo to a friend with a question attached.
+          </p>
+          <p class="body" data-reveal="0.8">
+            Give them a tool that respects their taste and keeps up with their curiosity — <em>they'll open it every time they open a bottle.</em>
+          </p>
+          <p class="body s3-aside" data-reveal="0.92" style="font-style: italic; font-family: var(--serif); color: var(--bone-dim); font-size: clamp(15px, 1.05vw, 17px); margin-top: 8px;">
+            Curious, comfortable, or serious — your call. The voice adjusts to the room.
+          </p>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">03 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 4 — THE PRODUCT ============== -->
+  <div class="slide" data-index="3">
+    <div class="slide-inner s4">
+      <div class="s4-content">
+        <span class="eyebrow" data-reveal="0">The product</span>
+        <h2 class="s4-headline" data-reveal="0.15">A drinks companion <em>that actually knows you.</em></h2>
+        <div class="s4-paras">
+          <p class="body" data-reveal="0.4">
+            Point the camera at a menu, a dish, or a bottle. Describe what you're eating. SommSavvy gives you smart, contextual guidance in a voice that's <strong>warm and knowledgeable</strong> — and never condescending in either direction.
+          </p>
+          <p class="body" data-reveal="0.55">
+            Every drink saved builds a picture of your taste. <em>Every recommendation that follows is shaped by it.</em>
+          </p>
+        </div>
+        <div class="s4-modes" data-reveal="0.78">
+          <span class="mode-chip"><span class="glyph"></span>Photo</span>
+          <span class="mode-chip"><span class="glyph"></span>Voice</span>
+          <span class="mode-chip"><span class="glyph"></span>Text</span>
+        </div>
+      </div>
+      <div class="s4-image">
+        <img src="https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/2a7fc506-ecc5-4c2b-bc40-f8ac223b8696.png?w=1200&fm=webp" alt="">
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">04 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 5 — THREE PILLARS ============== -->
+  <div class="slide" data-index="4">
+    <div class="slide-inner s5">
+      <div class="s5-header">
+        <span class="eyebrow" data-reveal="0">The three pillars</span>
+        <h2 data-reveal="0.15">Three features. <em>One thing building underneath.</em></h2>
+        <p class="s5-intro" data-reveal="0.28">SommSavvy is built around three distinct features. Here is what each one does.</p>
+      </div>
+      <div class="s5-pillars">
+        <div class="pillar" data-reveal="0.45">
+          <div class="pillar-num">I.</div>
+          <span class="pillar-eyebrow">Pocket Somm</span>
+          <h3>Show what you're having. <em>Get the pour.</em></h3>
+          <p>Three or four editorial recommendations — chiaroscuro bottle portraits, a real reason each one works. The more the cellar grows, the more it knows you.</p>
+        </div>
+        <div class="pillar" data-reveal="0.6">
+          <div class="pillar-num">II.</div>
+          <span class="pillar-eyebrow">Reverse Scan</span>
+          <h3>Aim at any bottle. <em>Get the story.</em></h3>
+          <p>What it is. What to expect. Whether it's worth the price. When to open it. Honest on value. Never flattering the label just because it's well-known.</p>
+        </div>
+        <div class="pillar" data-reveal="0.75">
+          <div class="pillar-num">III.</div>
+          <span class="pillar-eyebrow">The Cellar</span>
+          <h3>Everything you save. <em>Beautifully kept.</em></h3>
+          <p>Saved, rated, noted — in an asymmetric editorial mosaic worth showing someone. The cellar is the heart. The other two bring you back to it.</p>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">05 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 6 — TASTE PROFILE ============== -->
+  <div class="slide" data-index="5">
+    <div class="slide-inner s6">
+      <div class="s6-inner">
+        <span class="eyebrow" data-reveal="0">The taste profile</span>
+        <div class="s6-statement">
+          <div class="s6-line" data-reveal="0.2">The first recommendation is good.</div>
+          <div class="s6-line italic" data-reveal="0.85">The fiftieth is uncanny.</div>
+        </div>
+        <div class="s6-body">
+          <div class="s6-counter" data-reveal="1.4">№50<sup>TH</sup></div>
+          <div data-reveal="1.55">
+            <p class="body">
+              <strong>No questionnaire. No preference sliders. No onboarding survey.</strong> Just the quiet accumulation of what you've actually liked — a natural-language portrait that builds without asking you to sit still for it.
+            </p>
+            <p class="s6-portrait" style="margin-top: 18px;">
+              Bold Italian reds. Exploring sherry. Would never order a Chardonnay unless pushed.
+            </p>
+            <p class="body" style="margin-top: 16px; max-width: 52ch;">
+              Every future recommendation is shaped by it. Friday's dinner pick isn't generic. <em>It's calibrated to you.</em>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">06 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 7 — LIVE ============== -->
+  <div class="slide" data-index="6">
+    <div class="slide-inner s7">
+      <div class="s7-bg">
+        <img src="https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/b99cf7d2-b486-4210-a8de-c3705f414684.png?w=2000&fm=webp" alt="">
+      </div>
+      <div class="s7-content">
+        <div class="s7-left">
+          <span class="s7-meta" data-reveal="0"><span class="pulse"></span>Live · May 2026</span>
+          <h2 class="s7-mark" data-reveal="0.15">All three pillars <em>are live.</em></h2>
+          <div class="s7-line" data-reveal="0.55">
+            First users are building their cellars.
+            <span class="quiet">The brand is fully realized. The taste profile is generating.</span>
+          </div>
+        </div>
+        <div class="s7-right" data-reveal="0.4">
+          <div class="s7-status">
+            <span class="s7-status-header">SommSavvy features</span>
+            <div class="status-row">
+              <span class="status-label">Pocket Somm</span>
+              <span class="status-value">Live</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">Reverse Scan</span>
+              <span class="status-value">Live</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">The Cellar</span>
+              <span class="status-value">Live</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">Taste Profile</span>
+              <span class="status-value">Auto</span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">Auth · email code</span>
+              <span class="status-value">Seamless</span>
+            </div>
+          </div>
+          <p class="body" style="font-size: 13px; color: var(--bone-faint); max-width: 38ch; margin-top: 6px;">
+            Candlelit viewfinder. Ember-glow label trace. Chiaroscuro bottle portraits. Asymmetric mosaic. Anonymous-to-saved in one motion.
+          </p>
+          <p class="s7-bridge">
+            The reactive layer is live. <span class="accent">The proactive layer is building.</span>
+          </p>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">07 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 8 — WHERE THE CELLAR GOES ============== -->
+  <div class="slide" data-index="7">
+    <div class="slide-inner s8">
+      <div class="s8-header">
+        <span class="eyebrow" data-reveal="0">Building now</span>
+        <h2 data-reveal="0.15">From tool you reach for — <em>to one that reaches back.</em></h2>
+        <p class="body" data-reveal="0.3">The first layer of SommSavvy is reactive — you bring it a question, it answers. The next layer reaches back. And it starts with what every user already has: <strong>a taste journal.</strong> The intelligence built on that journal — the shape of the palate, the gaps, the weekly dispatch — <strong>serves everyone, from day one.</strong> The inventory layer, for the subset who hold bottles, <em>follows once the data is there to power it.</em></p>
+      </div>
+      <div class="s8-grid">
+        <div class="future future-next" data-reveal="0.4">
+          <div class="future-head">
+            <div class="future-num">I.</div>
+            <span class="future-badge">Next</span>
+          </div>
+          <span class="future-eyebrow">Cellar Intelligence</span>
+          <h3>The shape of <em>your taste.</em></h3>
+          <p>What your palate reveals, where the genuine gaps are, and the three specific bottles that would make it better. Built from the journal every user already has — no owned bottles required.</p>
+        </div>
+        <div class="future" data-reveal="0.5">
+          <div class="future-head">
+            <div class="future-num">II.</div>
+          </div>
+          <span class="future-eyebrow">Opening Notes</span>
+          <h3>Sunday morning. <em>In your inbox.</em></h3>
+          <p>A weekly editorial dispatch — how the taste is shifting, one thing worth knowing, a quiet reason to open the app. The delivery channel for everything the intelligence layer surfaces.</p>
+        </div>
+        <div class="future" data-reveal="0.6">
+          <div class="future-head">
+            <div class="future-num">III.</div>
+          </div>
+          <span class="future-eyebrow">The Hunt</span>
+          <h3>Passive radar. <em>Active agent.</em></h3>
+          <p>A quiet Ember flash when the camera finds a wanted bottle. An active search when the bottle is hard to reach — honest about access, opinionated about value, and ready with three alternatives that deliver the same experience.</p>
+        </div>
+        <div class="future" data-reveal="0.7">
+          <div class="future-head">
+            <div class="future-num">IV.</div>
+          </div>
+          <span class="future-eyebrow">Drinking Windows</span>
+          <h3>Every owned bottle. <em>A when.</em></h3>
+          <p>Aging intelligence on every bottle in the rack — when each one is at peak, and an honest warning when you have already waited too long. Builds on the ownership data accruing in the background while the journal intelligence ships.</p>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">08 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 9 — AT THE TABLE ============== -->
+  <div class="slide" data-index="8">
+    <div class="slide-inner s9">
+      <div class="s9-content">
+        <span class="eyebrow" data-reveal="0">At the table</span>
+        <div class="s9-quote" data-reveal="0.15">
+          The most stressful three minutes at any nice restaurant is when the wine list arrives.
+        </div>
+        <h2 class="s9-headline" data-reveal="0.4">Never hold the list <em>like a prop again.</em></h2>
+        <div class="s9-paras">
+          <p class="body" data-reveal="0.55">
+            <strong>Photograph the list.</strong> SommSavvy reads every bottle and price and surfaces the four genuinely good picks — with honest notes on what's overpriced for the appellation and what's hiding on page three.
+          </p>
+        </div>
+        <div class="s9-tiers" data-reveal="0.7">
+          <div class="tier">
+            <span class="tier-label">The smart move</span>
+            <span class="tier-text">The bottle that does the most work for the room.</span>
+          </div>
+          <div class="tier">
+            <span class="tier-label">The interesting</span>
+            <span class="tier-text">Nobody else is ordering it. Worth asking about.</span>
+          </div>
+          <div class="tier">
+            <span class="tier-label">The safe bet</span>
+            <span class="tier-text">If the table is split. Will not disappoint.</span>
+          </div>
+          <div class="tier">
+            <span class="tier-label">The splurge</span>
+            <span class="tier-text">When the night calls for it. We'll tell you when.</span>
+          </div>
+        </div>
+        <p class="body" data-reveal="0.85" style="font-style: italic; font-family: var(--serif); color: var(--bone-dim); font-size: clamp(15px, 1.1vw, 18px); margin-top: 4px;">
+          Tell it what everyone's ordering — get the two bottles that tie the table together.
+        </p>
+      </div>
+      <div class="s9-image">
+        <img src="https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/2a7fc506-ecc5-4c2b-bc40-f8ac223b8696.png?w=1400&fm=webp" alt="">
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">09 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 10 — THE REFERENCE ============== -->
+  <div class="slide" data-index="9">
+    <div class="slide-inner s10">
+      <div class="s10-header">
+        <span class="eyebrow" data-reveal="0">The reference layer</span>
+        <h2 data-reveal="0.15">The drinks reference an enthusiast <em>actually reaches for.</em></h2>
+      </div>
+      <div class="s10-list">
+        <div class="ref-row" data-reveal="0.35">
+          <div class="ref-num">I.</div>
+          <div class="ref-name">
+            <span class="ref-eyebrow">Vintage Oracle</span>
+            <h3>Was it a <em>good year?</em></h3>
+          </div>
+          <p class="ref-desc">
+            One editorial sentence, generated from live sources, baked into every scan. Not a score — <em>something true about what happened in that region, that year.</em>
+          </p>
+        </div>
+        <div class="ref-row" data-reveal="0.5">
+          <div class="ref-num">II.</div>
+          <div class="ref-name">
+            <span class="ref-eyebrow">Regional Deep-Dives</span>
+            <h3>Writing that <em>opens bottles.</em></h3>
+          </div>
+          <p class="ref-desc">
+            Immersive editorial guides to the great wine regions and spirit traditions. <em>The kind of writing that makes you want to open a bottle.</em>
+          </p>
+        </div>
+        <div class="ref-row" data-reveal="0.65">
+          <div class="ref-num">III.</div>
+          <div class="ref-name">
+            <span class="ref-eyebrow">Live Tastings</span>
+            <h3>A hosted pour, <em>any night.</em></h3>
+          </div>
+          <p class="ref-desc">
+            Scan any bottle. SommSavvy generates a narrated tasting guide specific to that producer and that vintage — pour-along experiences in the living room.
+          </p>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">10 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 11 — THE OPPORTUNITY ============== -->
+  <div class="slide" data-index="10">
+    <div class="slide-inner s11">
+      <div class="s11-content">
+        <div class="s11-left">
+          <span class="eyebrow" data-reveal="0">The opportunity</span>
+          <h2 class="s11-headline" data-reveal="0.15">The enthusiast <em>is not a niche.</em></h2>
+          <p class="s11-kicker" data-reveal="0.4">
+            They're concentrated in the demographics every premium drinks brand wants to reach — and they've <em>never had a tool built specifically for them.</em>
+          </p>
+        </div>
+        <div class="s11-stats" data-reveal="0.55">
+          <div class="stat-row">
+            <div class="stat-num"><em>More.</em></div>
+            <p class="stat-text"><strong>They spend more.</strong> Per occasion, per bottle, per year. Build cellars before they realize they have.</p>
+          </div>
+          <div class="stat-row">
+            <div class="stat-num"><em>Longer.</em></div>
+            <p class="stat-text"><strong>They stay longer.</strong> The retention pattern of someone who actually uses the app — not someone who downloads and forgets.</p>
+          </div>
+          <div class="stat-row">
+            <div class="stat-num"><em>Louder.</em></div>
+            <p class="stat-text"><strong>They tell people.</strong> What to order at dinner. What to put in the cart at the wine shop. They are a node, not an endpoint.</p>
+          </div>
+          <div class="stat-row">
+            <div class="stat-num">∅</div>
+            <p class="stat-text"><strong>Tools built for them.</strong> Until now.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-mark"><em>S</em></div>
+      <div class="slide-no">11 / 12</div>
+    </div>
+  </div>
+
+  <!-- ============== SLIDE 12 — THE VISION ============== -->
+  <div class="slide" data-index="11">
+    <div class="slide-inner s12">
+      <div class="s12-bg">
+        <img src="https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/b8d7fb5e-6956-4c45-90e7-673e65290427.png?w=2200&fm=webp" alt="">
+      </div>
+      <div class="s12-content">
+        <span class="s12-eyebrow" data-reveal="0">The vision</span>
+        <h1 class="s12-wordmark" data-reveal="0.2">Somm<span class="savvy">Savvy</span></h1>
+        <div class="s12-rule" data-reveal="0.45"></div>
+        <div class="s12-tagline" data-reveal="0.6">The drinks companion for everyone who <em>already cares.</em></div>
+        <div class="s12-locations" data-reveal="0.85">
+          <span>At the table</span>
+          <span class="sep">·</span>
+          <span>At the shelf</span>
+          <span class="sep">·</span>
+          <span>At home</span>
+        </div>
+        <p class="body" data-reveal="1.0" style="max-width: 56ch; text-align: center; color: var(--bone-dim); margin-top: 6px;">
+          <strong style="color: var(--bone)">The sommelier who knows your taste, remembers every bottle, and is always willing to keep talking.</strong>
+        </p>
+        <div class="s12-foot" data-reveal="1.2" style="margin-top: 16px;">— Live. Building. Pouring.</div>
+      </div>
+      <div class="slide-no" style="color: var(--bone-dim);">12 / 12</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="tap-zones">
+  <div class="tap-zone tap-prev" id="tapPrev"></div>
+  <div class="tap-zone tap-next" id="tapNext"></div>
+</div>
+
+<div class="chevron chevron-prev hidden" id="chevronPrev">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+</div>
+<div class="chevron chevron-next" id="chevronNext">
+  <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"></polyline></svg>
+</div>
+
+<script>
+(function() {
+  const deck = document.getElementById('deck');
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let current = 0;
+  let isAnimating = false;
+
+  const tapPrev = document.getElementById('tapPrev');
+  const tapNext = document.getElementById('tapNext');
+  const progress = document.getElementById('progress');
+  const chevronPrev = document.getElementById('chevronPrev');
+  const chevronNext = document.getElementById('chevronNext');
+
+  for (let i = 0; i < totalSlides; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'progress-seg' + (i === 0 ? ' active' : '');
+    seg.innerHTML = '<div class="fill"></div>';
+    seg.addEventListener('click', () => goTo(i));
+    progress.appendChild(seg);
+  }
+
+  function updateNav() {
+    const segs = progress.querySelectorAll('.progress-seg');
+    segs.forEach((s, i) => {
+      s.classList.toggle('done', i < current);
+      s.classList.toggle('active', i === current);
+    });
+    chevronPrev.classList.toggle('hidden', current === 0);
+    chevronNext.classList.toggle('hidden', current === totalSlides - 1);
+  }
+
+  const revealed = new Set();
+  function revealSlide(index) {
+    if (revealed.has(index)) return;
+    revealed.add(index);
+    const els = slides[index].querySelectorAll('[data-reveal]');
+    els.forEach((el) => {
+      const delay = parseFloat(el.dataset.reveal) || 0;
+      gsap.fromTo(el,
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.7, delay, ease: 'power2.out' }
+      );
+    });
+  }
+
+  function goTo(index) {
+    if (index === current || isAnimating || index < 0) return;
+    if (index >= totalSlides) {
+      window.parent.postMessage({ type: 'pitch-deck-complete' }, '*');
+      return;
+    }
+    isAnimating = true;
+    current = index;
+    updateNav();
+
+    gsap.to(deck, {
+      x: -current * window.innerWidth,
+      duration: 0.55,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        revealSlide(current);
+        isAnimating = false;
+      }
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goTo(current - 1); }
+  });
+
+  tapPrev.addEventListener('click', () => goTo(current - 1));
+  tapNext.addEventListener('click', () => goTo(current + 1));
+  chevronPrev.addEventListener('click', (e) => { e.stopPropagation(); goTo(current - 1); });
+  chevronNext.addEventListener('click', (e) => { e.stopPropagation(); goTo(current + 1); });
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) goTo(current + 1);
+    else goTo(current - 1);
+  }, { passive: true });
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => gsap.set(deck, { x: -current * window.innerWidth }), 100);
+  });
+
+  gsap.set(deck, { x: 0 });
+  updateNav();
+  revealed.add(0);
+  slides[0].querySelectorAll('[data-reveal]').forEach(el => { el.style.opacity = 1; });
+
+  // Subtle ember candleflicker on the title savvy mark
+  const flicker = document.querySelector('.s1-wordmark .savvy');
+  if (flicker) {
+    gsap.to(flicker, {
+      opacity: 0.78,
+      duration: 1.8,
+      yoyo: true,
+      repeat: -1,
+      ease: 'sine.inOut',
+      delay: 1.5
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

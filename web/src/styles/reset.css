@@ -1,0 +1,113 @@
+/* Modern reset, focused on what we actually need. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  height: 100dvh;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern', 'liga', 'calt';
+  background: var(--midnight);
+  color: var(--parchment);
+  font-family: var(--font-geist);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+body {
+  background: var(--midnight);
+  color: var(--parchment);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  /* Block iOS Safari swipe-to-go-back glitches on the camera home. */
+  overscroll-behavior: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* Selection in Ember. */
+::selection {
+  background: color-mix(in oklch, var(--ember) 35%, transparent);
+  color: var(--parchment);
+}
+
+/* Focus ring: 2px Midnight gap, 2px Ember halo. */
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--midnight),
+    0 0 0 4px var(--ember);
+  border-radius: inherit;
+}
+
+/* Scrollbars: thin, warm. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--bone) 18%, transparent) transparent;
+}
+
+/* App chrome should feel native: no text selection on UI elements. */
+.app-chrome,
+.app-chrome * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Tabular numbers everywhere they're called for. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

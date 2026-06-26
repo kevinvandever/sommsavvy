@@ -1,0 +1,16 @@
+/* Static SVG film grain overlay. Mounted once at root. */
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain {
+    opacity: 0.025;
+  }
+}
