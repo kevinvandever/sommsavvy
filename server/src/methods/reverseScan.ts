@@ -1,6 +1,13 @@
-import { mindstudio, auth, stream } from '../runtime';
+import { mindstudio, auth, stream, getContextIp, getContextAnonToken } from '../runtime';
 import { Users } from './tables/users';
 import { VOICE_RULES, DEPTH_GUIDANCE, type Depth } from './common/voice';
+import {
+  resolveIdentity,
+  getCounters,
+  computeImageAllowance,
+  incrementImageCount,
+} from '../usage/guardrails';
+import { logEvent, SCAN_STARTED, SCAN_SUCCEEDED, SCAN_FAILED } from '../observability/events';
 
 interface ScanResult {
   name: string;
@@ -17,6 +24,7 @@ interface ScanResult {
   confidence: 'high' | 'medium' | 'low';
   imagePrompt?: string; // model-supplied; consumed before return
   photoUrl?: string;
+  notice?: 'daily_limit' | 'images_unavailable';
 }
 
 interface ReverseScanInput {
@@ -36,33 +44,36 @@ export async function reverseScan(input: ReverseScanInput): Promise<ScanResult> 
     throw new Error('Show me a bottle, or type a name. Anything will do.');
   }
 
-  let tasteSummary: string | undefined;
-  if (auth.userId) {
-    const me = await Users.get(auth.userId);
-    if (me?.tasteSummary) tasteSummary = me.tasteSummary;
-  }
+  logEvent(SCAN_STARTED, { method: 'reverseScan', identityType: auth.userId ? 'user' : 'anon' });
 
-  await stream({ status: imageUrl ? 'Reading the label...' : 'Considering...' });
+  try {
+    let tasteSummary: string | undefined;
+    if (auth.userId) {
+      const me = await Users.get(auth.userId);
+      if (me?.tasteSummary) tasteSummary = me.tasteSummary;
+    }
 
-  const exampleOutput: ScanResult = {
-    name: 'Domaine Tempier Bandol Rouge',
-    kind: 'wine',
-    producer: 'Domaine Tempier',
-    region: 'Bandol, Provence, France',
-    vintage: 2020,
-    abv: 13.5,
-    expect:
-      'A wild, savory red with serious tannic structure and notes of garrigue, dried herbs, and warm earth. Built for richer fare, not Tuesday salads.',
-    monocleAside: 'Evocative of the garrigue at high noon, if one must say so.',
-    pairings: ['Lamb', 'Wild mushroom risotto', 'Aged cheese', 'Slow-braised short rib'],
-    valueNote: 'Steady at $55. A serious pour for the price.',
-    occasion: 'Sunday dinner with people who care.',
-    confidence: 'high',
-    imagePrompt:
-      'Editorial chiaroscuro portrait of a Domaine Tempier Bandol Rouge 2020 wine bottle. Single subject in warm raking candlelight from upper left. Deep espresso black background, vignetting to pure black at edges. Shallow depth of field. Subtle film grain.',
-  };
+    await stream({ status: imageUrl ? 'Reading the label...' : 'Considering...' });
 
-  const scanPrompt = `You are SommSavvy, a pocket sommelier doing a "Reverse Scan" on a single drink the user has placed in front of you.
+    const exampleOutput: ScanResult = {
+      name: 'Domaine Tempier Bandol Rouge',
+      kind: 'wine',
+      producer: 'Domaine Tempier',
+      region: 'Bandol, Provence, France',
+      vintage: 2020,
+      abv: 13.5,
+      expect:
+        'A wild, savory red with serious tannic structure and notes of garrigue, dried herbs, and warm earth. Built for richer fare, not Tuesday salads.',
+      monocleAside: 'Evocative of the garrigue at high noon, if one must say so.',
+      pairings: ['Lamb', 'Wild mushroom risotto', 'Aged cheese', 'Slow-braised short rib'],
+      valueNote: 'Steady at $55. A serious pour for the price.',
+      occasion: 'Sunday dinner with people who care.',
+      confidence: 'high',
+      imagePrompt:
+        'Editorial chiaroscuro portrait of a Domaine Tempier Bandol Rouge 2020 wine bottle. Single subject in warm raking candlelight from upper left. Deep espresso black background, vignetting to pure black at edges. Shallow depth of field. Subtle film grain.',
+    };
+
+    const scanPrompt = `You are SommSavvy, a pocket sommelier doing a "Reverse Scan" on a single drink the user has placed in front of you.
 
 ${VOICE_RULES}
 
@@ -94,62 +105,86 @@ If you cannot identify the drink, set confidence to "low" and use "expect" to de
 
 No prose, no markdown fences. Only the JSON object.`;
 
-  let result: ScanResult;
-  try {
-    if (imageUrl) {
-      // Vision path: analyzeImage returns the structured JSON in one call.
-      const { analysis } = await mindstudio.analyzeImage({
-        prompt: scanPrompt,
-        imageUrl,
-      });
-      result = parseJsonLoosely<ScanResult>(analysis);
-    } else {
-      // Text-only path: generateText with Claude Haiku.
-      const { content } = await mindstudio.generateText({
-        message: scanPrompt,
-        modelOverride: {
-          temperature: 0.5,
-          maxResponseTokens: 2000,
-        },
-        structuredOutputType: 'json',
-        structuredOutputExample: JSON.stringify(exampleOutput),
-      });
-      result = typeof content === 'string' ? JSON.parse(content) : (content as ScanResult);
-    }
-  } catch (err) {
-    console.error('reverseScan identification failed:', err);
-    throw new Error('Could not place this one. Try a clearer label?');
-  }
-
-  // Stream the text card NOW so the frontend can navigate to /result.
-  const { imagePrompt: _earlyPrompt, ...earlyResult } = result;
-  await stream({ partialResult: earlyResult });
-
-  await stream({ status: 'Pouring...' });
-
-  // Generate the bottle portrait. Skip on low confidence.
-  if (result.confidence !== 'low') {
+    let result: ScanResult;
     try {
-      const portraitPrompt =
-        result.imagePrompt ||
-        `Editorial chiaroscuro portrait of a ${result.kind} bottle of ${result.producer ?? result.name}${result.vintage ? ' ' + result.vintage : ''}. Single subject in warm raking candlelight from upper left. Deep espresso black background, vignetting to pure black at edges. Shallow depth of field. Subtle film grain. Atmospheric, restrained, magazine editorial.`;
-      const { imageUrl: portrait } = await mindstudio.generateImage({
-        prompt: portraitPrompt,
-        imageModelOverride: {
-          config: {
-            aspect_ratio: '3:4',
+      if (imageUrl) {
+        // Vision path: analyzeImage returns the structured JSON in one call.
+        const { analysis } = await mindstudio.analyzeImage({
+          prompt: scanPrompt,
+          imageUrl,
+        });
+        result = parseJsonLoosely<ScanResult>(analysis);
+      } else {
+        // Text-only path: generateText with Claude Haiku.
+        const { content } = await mindstudio.generateText({
+          message: scanPrompt,
+          modelOverride: {
+            temperature: 0.5,
+            maxResponseTokens: 2000,
           },
-        },
-      });
-      result.photoUrl = Array.isArray(portrait) ? portrait[0] : portrait;
+          structuredOutputType: 'json',
+          structuredOutputExample: JSON.stringify(exampleOutput),
+        });
+        result = typeof content === 'string' ? JSON.parse(content) : (content as ScanResult);
+      }
     } catch (err) {
-      console.error('Bottle portrait failed (non-fatal):', err);
+      console.error('reverseScan identification failed:', err);
+      throw new Error('Could not place this one. Try a clearer label?');
     }
-  }
 
-  // Strip the working field before returning.
-  const { imagePrompt, ...publicResult } = result;
-  return publicResult;
+    // Stream the text card NOW so the frontend can navigate to /result.
+    const { imagePrompt: _earlyPrompt, ...earlyResult } = result;
+    await stream({ partialResult: earlyResult });
+
+    // --- Image allowance check ---
+    const ip = getContextIp();
+    const anonToken = getContextAnonToken();
+    const identity = resolveIdentity(auth.userId, anonToken, ip);
+    const counters = await getCounters(identity.primary, identity.ipKey);
+    const { allowed, notice } = computeImageAllowance(counters, identity.isSignedIn, 1);
+
+    if (notice) {
+      result.notice = notice;
+    }
+
+    // Generate the bottle portrait only if allowed and confidence is sufficient.
+    if (allowed > 0 && result.confidence !== 'low') {
+      await stream({ status: 'Pouring...' });
+      try {
+        const portraitPrompt =
+          result.imagePrompt ||
+          `Editorial chiaroscuro portrait of a ${result.kind} bottle of ${result.producer ?? result.name}${result.vintage ? ' ' + result.vintage : ''}. Single subject in warm raking candlelight from upper left. Deep espresso black background, vignetting to pure black at edges. Shallow depth of field. Subtle film grain. Atmospheric, restrained, magazine editorial.`;
+        const { imageUrl: portrait } = await mindstudio.generateImage({
+          prompt: portraitPrompt,
+          imageModelOverride: {
+            config: {
+              aspect_ratio: '3:4',
+            },
+          },
+        });
+        result.photoUrl = Array.isArray(portrait) ? portrait[0] : portrait;
+
+        // Only increment on successful generation.
+        await incrementImageCount(identity.primary, identity.ipKey, 1);
+      } catch (err) {
+        // Provider failure: do NOT increment counters.
+        console.error('Bottle portrait failed (non-fatal):', err);
+      }
+    }
+
+    // Strip the working field before returning.
+    const { imagePrompt, ...publicResult } = result;
+
+    logEvent(SCAN_SUCCEEDED, { method: 'reverseScan' });
+    return publicResult;
+  } catch (err) {
+    const reason =
+      err instanceof Error && err.message.includes('Try a clearer')
+        ? 'provider_error'
+        : 'input_error';
+    logEvent(SCAN_FAILED, { method: 'reverseScan', reason });
+    throw err;
+  }
 }
 
 // Parse JSON that the model may have wrapped in fences or surrounding prose.

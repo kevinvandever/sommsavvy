@@ -19,6 +19,10 @@ export interface RequestContext {
   // Set only for streaming (SSE) requests. Undefined otherwise, in which
   // case stream() is a no-op (e.g. plain JSON methods, background tasks).
   emit?: StreamEmitter;
+  // Client IP extracted from the request (X-Forwarded-For rightmost or fallback).
+  clientIp?: string;
+  // Anonymous device token from the X-Anon-Id header, or null if absent.
+  anonToken?: string | null;
 }
 
 const als = new AsyncLocalStorage<RequestContext>();

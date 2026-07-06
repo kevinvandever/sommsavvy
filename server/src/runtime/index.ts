@@ -23,3 +23,13 @@ export async function stream(payload: StreamPayload): Promise<void> {
   const ctx = currentContext();
   await ctx.emit?.(payload);
 }
+
+// Request-scoped client IP. Set by the route layer from X-Forwarded-For.
+export function getContextIp(): string {
+  return currentContext().clientIp ?? '127.0.0.1';
+}
+
+// Request-scoped anonymous device token. Set by the route layer from X-Anon-Id.
+export function getContextAnonToken(): string | null {
+  return currentContext().anonToken ?? null;
+}

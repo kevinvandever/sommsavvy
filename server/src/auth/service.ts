@@ -5,6 +5,7 @@ import { Users, type User } from '../methods/tables/users';
 import type { Hydrated } from '../db/adapter';
 import { sendCodeEmail } from './email';
 import { signSession } from './jwt';
+import { logEvent, SIGNED_UP } from '../observability/events';
 
 // Error carrying a stable machine code, so the frontend can branch on
 // e.code exactly as it did against the platform ('invalid_code', etc.).
@@ -133,6 +134,7 @@ export async function verifyEmailCode(
   let user = existing[0];
   if (!user) {
     user = await Users.push({ email, displayName: email.split('@')[0] });
+    logEvent(SIGNED_UP, { userId: user.id });
   }
 
   return { token: signSession(user.id), user };

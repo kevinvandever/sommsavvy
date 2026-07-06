@@ -1,6 +1,7 @@
 import { db, auth } from '../runtime';
 import { CellarEntries } from './tables/cellarEntries';
 import { runTasteSummaryRegen } from './common/regenerateTasteSummaryInternal';
+import { logEvent, CELLAR_SAVED } from '../observability/events';
 
 interface SaveInput {
   kind: 'wine' | 'beer' | 'spirits';
@@ -51,6 +52,8 @@ export async function saveCellarEntry(input: SaveInput) {
     tastedAt: input.tastedAt,
     savedAt: db.now(),
   });
+
+  logEvent(CELLAR_SAVED, { userId: auth.userId, entryId: entry.id });
 
   // Fire-and-forget regenerate the taste summary. The user does not wait for it.
   const userId = auth.userId;

@@ -33,6 +33,16 @@ CREATE TABLE IF NOT EXISTS auth_verifications (
   created_at  bigint  NOT NULL
 );
 CREATE INDEX IF NOT EXISTS auth_verifications_email_idx ON auth_verifications (email);
+
+-- Per-identity daily AI usage counters for cost guardrails.
+CREATE TABLE IF NOT EXISTS ai_usage (
+  identity     text NOT NULL,
+  day          date NOT NULL,
+  image_count  int  NOT NULL DEFAULT 0,
+  call_count   int  NOT NULL DEFAULT 0,
+  PRIMARY KEY (identity, day)
+);
+CREATE INDEX IF NOT EXISTS ai_usage_day_idx ON ai_usage (day);
 `;
 
 export async function migrate(): Promise<void> {

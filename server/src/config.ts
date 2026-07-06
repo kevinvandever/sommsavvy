@@ -70,6 +70,19 @@ export const config = {
     publicBaseUrl: optional('R2_PUBLIC_BASE_URL'),
   },
 
+  // ---- Cost Guardrails ----
+  dailyImageLimit: Number(optional('DAILY_IMAGE_LIMIT', '300')),
+  userDailyImageLimit: Number(optional('USER_DAILY_IMAGE_LIMIT', '20')),
+  anonDailyImageLimit: Number(optional('ANON_DAILY_IMAGE_LIMIT', '5')),
+  anonIpDailyImageLimit: Number(optional('ANON_IP_DAILY_IMAGE_LIMIT', '15')),
+  get signedInReservedImages(): number {
+    const raw = Number(optional('SIGNEDIN_RESERVED_IMAGES', '90'));
+    return Math.min(raw, this.dailyImageLimit);
+  },
+  aiRatePerMin: Number(optional('AI_RATE_PER_MIN', '12')),
+  anonDailyCallLimit: Number(optional('ANON_DAILY_CALL_LIMIT', '0')),
+  pocketSommImageCount: Number(optional('POCKET_SOMM_IMAGE_COUNT', '1')),
+
   get isProd(): boolean {
     return process.env.NODE_ENV === 'production';
   },

@@ -3,5 +3,7 @@
 export type AppEnv = {
   Variables: {
     userId?: string;
+    clientIp?: string;
+    anonToken?: string | null;
   };
 };
