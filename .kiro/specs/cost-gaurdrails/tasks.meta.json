@@ -1,0 +1,343 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add cost-guardrail environment variables to `server/src/config.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368277
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757385162
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757535596
+      }
+    ],
+    "1.2 Add `ai_usage` table to `server/src/db/migrate.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368383
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757386360
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757536332
+      }
+    ],
+    "1.3 Update `server/.env.example` with all new guardrail env vars": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368427
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757387170
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757537035
+      }
+    ],
+    "2.1 Create `server/src/usage/rateLimit.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368453
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757541213
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757677032
+      }
+    ],
+    "3.1 Create `server/src/usage/clientIp.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368484
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757542030
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757677783
+      }
+    ],
+    "4.1 Create `server/src/usage/guardrails.ts` — identity resolution and counter reads": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368510
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757690113
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757805349
+      }
+    ],
+    "4.2 Add allowance computation and increment logic to `server/src/usage/guardrails.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368533
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757831632
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758030347
+      }
+    ],
+    "5. Checkpoint — Config, schema, rate limiter, and guardrails compile": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368561
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758039654
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758133963
+      }
+    ],
+    "6.1 Add rate-limit and anon-call-gate checks to AI routes in `server/src/methods/routes.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368603
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758138398
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758237575
+      }
+    ],
+    "7.1 Update `server/src/methods/pocketSomm.ts` to respect image allowance": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368628
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758248595
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758539631
+      }
+    ],
+    "7.2 Update `server/src/methods/reverseScan.ts` to respect image allowance": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368650
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758249241
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758540459
+      }
+    ],
+    "8. Checkpoint — Full guardrail flow compiles and wires together": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368670
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758545350
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758590017
+      }
+    ],
+    "9.1 Create `server/src/observability/events.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368694
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757542652
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757678519
+      }
+    ],
+    "9.2 Emit `scan_started`, `scan_succeeded`, `scan_failed` in `pocketSomm.ts` and `reverseScan.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368716
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758595399
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758980077
+      }
+    ],
+    "9.3 Emit `cellar_saved` in `server/src/methods/saveCellarEntry.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368736
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758596556
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758978461
+      }
+    ],
+    "9.4 Emit `signed_up` in `server/src/auth/service.ts`": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368760
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758597466
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758979248
+      }
+    ],
+    "10. Final checkpoint — Ensure everything compiles and tests pass": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757368783
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758983947
+      },
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782759087651
+      }
+    ],
+    "1. Configuration and database schema": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757537061
+      }
+    ],
+    "2. In-memory per-IP rate limiter": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757677066
+      }
+    ],
+    "3. Client IP and anonymous identity helpers": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782757677818
+      }
+    ],
+    "4. Guardrails module — identity resolution and counter logic": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758030394
+      }
+    ],
+    "6. Integrate guardrails into the route layer": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758237613
+      }
+    ],
+    "7. Integrate image-allowance checks into AI methods": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758540493
+      }
+    ],
+    "9. Launch instrumentation": [
+      {
+        "executionId": "9f7c33f9-6c2d-49c5-b4b1-59734ee0250d",
+        "chatSessionId": "sess_a85f3abb-e7ec-4b22-9073-a89aeb3eac49",
+        "timestamp": 1782758980115
+      }
+    ]
+  }
+}
