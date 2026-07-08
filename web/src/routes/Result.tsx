@@ -1,43 +1,54 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useLocation } from 'wouter';
 import { motion } from 'motion/react';
-import { IconRefresh, IconArrowLeft } from '@tabler/icons-react';
+import { IconRefresh, IconArrowLeft, IconAlertTriangle } from '@tabler/icons-react';
 import { Header } from '../components/Header';
 import { Atmosphere } from '../components/Atmosphere';
 import { ResultCard } from '../components/ResultCard';
-import { ScanCard } from '../components/ScanCard';
+import { ScanCard, type EditedIdentity } from '../components/ScanCard';
 import { AuthSheet } from '../components/AuthSheet';
+import { OverrideAction } from '../components/OverrideAction';
 import { useStore } from '../store';
-import { api } from '../api';
-import type { Recommendation, ScanResult } from '../types';
+import { api, SignInRequiredError } from '../api';
+import type { PocketSommOutput, ScanResult } from '../types';
 import { EASE, DUR } from '../lib/motion';
 
 export function Result() {
   const [, navigate] = useLocation();
-  const pocketSommResult = useStore((s) => s.pocketSommResult);
-  const scanResult = useStore((s) => s.scanResult);
-  const capturedImageUrl = useStore((s) => s.capturedImageUrl);
+  const resultMode = useStore((s) => s.resultMode);
+  const result = useStore((s) => s.result);
+  const ambiguous = useStore((s) => s.ambiguous);
+  const confidence = useStore((s) => s.confidence);
+  const session = useStore((s) => s.session);
   const user = useStore((s) => s.user);
   const upsertEntry = useStore((s) => s.upsertEntry);
   const pendingSave = useStore((s) => s.pendingSave);
   const setPendingSave = useStore((s) => s.setPendingSave);
 
+  const setRouting = useStore((s) => s.setRouting);
+  const setResult = useStore((s) => s.setResult);
+  const depth = useStore((s) => s.depth);
+
   const [authOpen, setAuthOpen] = useState(false);
   const [pendingThumb, setPendingThumb] = useState<string | undefined>(undefined);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [scanSaved, setScanSaved] = useState(false);
-  // Map from card key (rec.name or scanResult.name) → saved cellar entry id.
-  // Lets the per-card "Add a note" link find its row in the cellar.
   const [savedEntryIds, setSavedEntryIds] = useState<Record<string, string>>({});
+  const [overriding, setOverriding] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
 
-  // No result: shouldn't happen, but bounce home.
-  if (!pocketSommResult && !scanResult) {
+  // No resultMode means the user navigated directly to /result. Redirect home.
+  if (!resultMode) {
     navigate('/');
     return null;
   }
 
-  // Build a save payload from a recommendation.
-  const buildPayload = (r: Recommendation) => ({
+  // Narrow the result to its typed shape based on resultMode.
+  const scanResult = resultMode === 'identify' ? (result as ScanResult | null) : null;
+  const pairResult = resultMode === 'pair' ? (result as PocketSommOutput | null) : null;
+
+  // Build a save payload from a recommendation (pair mode).
+  const buildPayload = (r: PocketSommOutput['recommendations'][number]) => ({
     kind: r.kind,
     name: r.name,
     producer: r.producer || undefined,
@@ -51,14 +62,14 @@ export function Result() {
     pairings: r.pairings,
   });
 
-  const buildScanPayload = (s: ScanResult) => ({
-    kind: s.kind,
-    name: s.name,
-    producer: s.producer || undefined,
-    region: s.region || undefined,
-    vintage: s.vintage || undefined,
+  const buildScanPayload = (s: ScanResult, edited?: EditedIdentity) => ({
+    kind: edited?.kind ?? s.kind,
+    name: edited?.name ?? s.name,
+    producer: edited?.producer || s.producer || undefined,
+    region: edited?.region || s.region || undefined,
+    vintage: edited?.vintage ?? s.vintage ?? undefined,
     abv: s.abv || undefined,
-    photoUrl: s.photoUrl || capturedImageUrl || undefined,
+    photoUrl: s.photoUrl || session?.imageUrl || undefined,
     source: 'scan' as const,
     whyText: s.expect,
     monocleAside: s.monocleAside || undefined,
@@ -67,55 +78,110 @@ export function Result() {
     valueNote: s.valueNote,
   });
 
-  // Save flow: if signed in, fire immediately and return the entry id so
-  // the calling card can attach a note to it. Otherwise stash, open auth,
-  // and return void — the saved id will arrive on the auth-success path
-  // below and feed back to the card via savedEntryIds.
   type SavePayload = Parameters<typeof api.saveCellarEntry>[0];
   const trySave = async (
     payload: SavePayload,
     key: string,
     thumb?: string,
   ): Promise<string | void> => {
+    // If we already know the user is anonymous, short-circuit to auth.
     if (!user) {
       setPendingSave({ payload });
       setPendingThumb(thumb);
       setAuthOpen(true);
       return;
     }
-    const { entry } = await api.saveCellarEntry(payload);
-    upsertEntry(entry);
-    setSavedIds((s) => new Set([...s, key]));
-    setSavedEntryIds((m) => ({ ...m, [key]: entry.id }));
-    return entry.id;
+    try {
+      const { entry } = await api.saveCellarEntry(payload);
+      upsertEntry(entry);
+      setSavedIds((s) => new Set([...s, key]));
+      setSavedEntryIds((m) => ({ ...m, [key]: entry.id }));
+      return entry.id;
+    } catch (err) {
+      // Token expired or server returned 401 — treat as sign_in_required.
+      if (err instanceof SignInRequiredError) {
+        setPendingSave({ payload });
+        setPendingThumb(thumb);
+        setAuthOpen(true);
+        return;
+      }
+      throw err;
+    }
   };
 
-  // After auth completes, the App-level effect re-fires the pending save. We
-  // also set the saved local state here so the pill goes Verde immediately.
+  // After auth completes, replay the pending save exactly once.
   const onAuthSuccess = async () => {
     if (!pendingSave) return;
     try {
       const { entry } = await api.saveCellarEntry(pendingSave.payload);
       upsertEntry(entry);
-      // We can't easily map back to which card it was, but set scanSaved if
-      // it matches scan result, otherwise mark the matching rec by name.
-      const key = pendingSave.payload.name;
-      if (scanResult && key === scanResult.name) {
+      // Mark as saved. For scan mode, set scanSaved directly so the card
+      // shows the saved state regardless of name edits.
+      if (resultMode === 'identify') {
         setScanSaved(true);
-      } else if (pocketSommResult) {
+      } else {
+        const key = pendingSave.payload.name;
         setSavedIds((s) => {
           const n = new Set(s);
           n.add(key);
           return n;
         });
       }
-      // Record the entry id keyed by name so the card's "Add a note" link
-      // can attach a note to the newly saved row.
-      setSavedEntryIds((m) => ({ ...m, [key]: entry.id }));
+      setSavedEntryIds((m) => ({ ...m, [pendingSave.payload.name]: entry.id }));
     } finally {
       setPendingSave(null);
     }
   };
+
+  // Handle stream errors: CONTEXT_EXPIRED routes to Home; generic errors
+  // show a friendly message on this surface with navigation intact.
+  const handleStreamError = useCallback(
+    (err: { message: string; code?: string }) => {
+      if (err.code === 'CONTEXT_EXPIRED') {
+        navigate('/?recapture=1');
+        return;
+      }
+      setStreamError('Something went sideways. Try scanning again.');
+      setOverriding(false);
+    },
+    [navigate],
+  );
+
+  // Override: re-call smartScan with forceMode using the current session.
+  const runOverride = useCallback(
+    async (target: 'identify' | 'pair') => {
+      // No session context available — navigate to Home with a notice.
+      if (!session?.imageUrl && !session?.text) {
+        navigate('/?recapture=1');
+        return;
+      }
+
+      setStreamError(null);
+      setOverriding(true);
+
+      try {
+        await api.smartScan(
+          { imageUrl: session.imageUrl, text: session.text, depth, forceMode: target },
+          {
+            onRouting: (meta) => {
+              setRouting(meta);
+            },
+            onResult: (res) => {
+              setRouting({ mode: res.mode, ambiguous: res.ambiguous, confidence: res.confidence });
+              setResult(res.data);
+              setOverriding(false);
+            },
+            onError: handleStreamError,
+          },
+        );
+      } catch {
+        // Network-level or pre-stream failure.
+        setStreamError('Something went sideways. Try scanning again.');
+        setOverriding(false);
+      }
+    },
+    [session, depth, setRouting, setResult, handleStreamError, navigate],
+  );
 
   return (
     <div className="canvas">
@@ -134,15 +200,50 @@ export function Result() {
             <IconArrowLeft size={16} stroke={1.6} /> Back to camera
           </button>
 
-          {pocketSommResult && (
+          {/* Override action: one per surface, prominent when ambiguous */}
+          {resultMode === 'identify' && (
+            <OverrideAction
+              label="Pair this instead"
+              ambiguous={ambiguous}
+              onOverride={() => runOverride('pair')}
+            />
+          )}
+          {resultMode === 'pair' && (
+            <OverrideAction
+              label="Identify and save"
+              ambiguous={ambiguous}
+              onOverride={() => runOverride('identify')}
+            />
+          )}
+
+          {/* Override loading state */}
+          {overriding && (
+            <div className="result__loading">
+              <p className="t-label result__loading-text">Switching lanes</p>
+              <div className="result__skeleton-stack">
+                <div className="result__skeleton-card" />
+              </div>
+            </div>
+          )}
+
+          {/* Stream error: friendly message, no technical details */}
+          {streamError && !overriding && (
+            <div className="result__error" role="alert">
+              <IconAlertTriangle size={20} stroke={1.6} />
+              <p className="t-body">{streamError}</p>
+            </div>
+          )}
+
+          {/* Pair mode: render ResultCard for each recommendation */}
+          {!overriding && resultMode === 'pair' && pairResult && (
             <>
-              {pocketSommResult.summary && (
+              {pairResult.summary && (
                 <p className="result__summary t-display t-display--italic">
-                  {pocketSommResult.summary}
+                  {pairResult.summary}
                 </p>
               )}
               <div className="result__stack">
-                {pocketSommResult.recommendations.map((rec, i) => (
+                {pairResult.recommendations.map((rec, i) => (
                   <ResultCard
                     key={`${rec.name}-${i}`}
                     rec={rec}
@@ -157,15 +258,39 @@ export function Result() {
             </>
           )}
 
-          {scanResult && (
+          {/* Pair mode: loading skeleton while waiting for data */}
+          {!overriding && resultMode === 'pair' && !pairResult && (
+            <div className="result__loading">
+              <p className="t-label result__loading-text">Finding pairings</p>
+              <div className="result__skeleton-stack">
+                <div className="result__skeleton-card" />
+                <div className="result__skeleton-card" />
+              </div>
+            </div>
+          )}
+
+          {/* Identify mode: render ScanCard */}
+          {!overriding && resultMode === 'identify' && scanResult && (
             <div className="result__stack">
               <ScanCard
                 result={scanResult}
-                capturedDataUrl={capturedImageUrl}
+                capturedDataUrl={session?.imageUrl ?? null}
                 saved={scanSaved}
                 savedEntryId={savedEntryIds[scanResult.name]}
-                onSave={() => trySave(buildScanPayload(scanResult), scanResult.name, scanResult.photoUrl)}
+                onSave={(edited) =>
+                  trySave(buildScanPayload(scanResult, edited), scanResult.name, scanResult.photoUrl)
+                }
               />
+            </div>
+          )}
+
+          {/* Identify mode: loading skeleton while waiting for data */}
+          {!overriding && resultMode === 'identify' && !scanResult && (
+            <div className="result__loading">
+              <p className="t-label result__loading-text">Identifying</p>
+              <div className="result__skeleton-stack">
+                <div className="result__skeleton-card result__skeleton-card--tall" />
+              </div>
             </div>
           )}
 
@@ -176,7 +301,11 @@ export function Result() {
 
         <AuthSheet
           open={authOpen}
-          onClose={() => setAuthOpen(false)}
+          onClose={() => {
+            setAuthOpen(false);
+            // Cancel: discard pendingSave without calling save.
+            setPendingSave(null);
+          }}
           bottleThumbnailUrl={pendingThumb}
           onSuccess={onAuthSuccess}
         />
@@ -217,6 +346,56 @@ export function Result() {
           margin-top: 16px;
         }
         .result__try-again:hover svg { transform: rotate(-30deg); transition: transform 280ms var(--ease-standard); }
+        .result__loading {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          padding: 40px 16px;
+        }
+        .result__loading-text {
+          color: color-mix(in oklch, var(--bone) 60%, transparent);
+          animation: result-pulse 2s ease-in-out infinite;
+        }
+        @keyframes result-pulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
+        .result__skeleton-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          width: 100%;
+        }
+        .result__skeleton-card {
+          background: color-mix(in oklch, var(--smoke) 80%, var(--midnight));
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--border-subtle);
+          height: 200px;
+          animation: result-pulse 2s ease-in-out infinite;
+        }
+        .result__skeleton-card--tall {
+          height: 360px;
+        }
+        .result__error {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 16px 20px;
+          background: color-mix(in oklch, var(--bordeaux) 12%, var(--midnight));
+          border: 1px solid color-mix(in oklch, var(--bordeaux) 30%, var(--border-subtle));
+          border-radius: var(--radius-lg);
+          color: color-mix(in oklch, var(--bordeaux) 80%, var(--bone));
+        }
+        .result__error .t-body {
+          margin: 0;
+          font-size: 15px;
+          line-height: 1.4;
+        }
+        .result__error svg {
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
       `}</style>
     </div>
   );

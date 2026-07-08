@@ -75,7 +75,20 @@ export interface ScanResult {
   photoUrl?: string;
 }
 
-export type Mode = 'somm' | 'scan';
+export type ResultMode = 'identify' | 'pair';
+
+export interface RoutingMeta {
+  mode: 'identify' | 'pair';
+  ambiguous: boolean;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export interface SmartScanResult {
+  mode: 'identify' | 'pair';
+  ambiguous: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  data: ScanResult | PocketSommOutput;
+}
 
 export interface PocketSommOutput {
   summary: string;

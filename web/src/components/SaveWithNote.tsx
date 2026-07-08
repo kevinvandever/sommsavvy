@@ -24,6 +24,8 @@ interface Props {
   drinkName: string;
   // Optional secondary context line ("Domaine Tempier — Bandol 2020").
   contextLine?: string;
+  // When true, the save action is disabled (unsettled low-confidence state).
+  disabled?: boolean;
 }
 
 // SavePill + auto-opening note sheet. Tapping Save fires the save
@@ -43,6 +45,7 @@ export function SaveWithNote({
   savedEntryId: initialEntryId,
   drinkName,
   contextLine,
+  disabled,
 }: Props) {
   // Track the entry id locally so a fresh save flips state without
   // waiting for the parent to plumb the id back through.
@@ -136,7 +139,7 @@ export function SaveWithNote({
 
   return (
     <div className="swn">
-      <SavePill onSave={handleSave} saved={saved} />
+      <SavePill onSave={handleSave} saved={saved} disabled={disabled} />
 
       <AnimatePresence mode="wait">
         {canShowAddNote && (

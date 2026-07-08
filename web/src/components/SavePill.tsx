@@ -4,11 +4,12 @@ import { IconBookmark, IconLoader2 } from '@tabler/icons-react';
 interface Props {
   onSave: () => void | Promise<void>;
   saved?: boolean; // controlled state if parent owns it
+  disabled?: boolean; // unsettled low-confidence state — muted and non-interactive
 }
 
 // The Save → Saved transformation pill. Width-locked so the label swap
 // doesn't shift layout. After saved, the Verde state is held briefly.
-export function SavePill({ onSave, saved: controlledSaved }: Props) {
+export function SavePill({ onSave, saved: controlledSaved, disabled }: Props) {
   const [saving, setSaving] = useState(false);
   const [savedLocal, setSavedLocal] = useState(false);
   // Either the parent's controlled flag OR the local optimistic flag wins.
@@ -19,7 +20,7 @@ export function SavePill({ onSave, saved: controlledSaved }: Props) {
   const saved = !!controlledSaved || savedLocal;
 
   const handle = async () => {
-    if (saving || saved) return;
+    if (saving || saved || disabled) return;
     setSaving(true);
     try {
       await onSave();
@@ -32,9 +33,10 @@ export function SavePill({ onSave, saved: controlledSaved }: Props) {
   return (
     <button
       type="button"
-      className={`spill ${saved ? 'is-saved' : ''}`}
+      className={`spill ${saved ? 'is-saved' : ''} ${disabled ? 'is-unsettled' : ''}`}
       onClick={handle}
-      disabled={saving}
+      disabled={saving || !!disabled}
+      aria-disabled={!!disabled}
     >
       <span className="spill__icon">
         {saving ? <IconLoader2 className="spin" size={16} /> : <IconBookmark size={16} stroke={1.6} fill={saved ? 'currentColor' : 'none'} />}
@@ -62,6 +64,14 @@ export function SavePill({ onSave, saved: controlledSaved }: Props) {
         }
         .spill:hover:not(:disabled):not(.is-saved) { box-shadow: var(--glow-ember); }
         .spill:active:not(:disabled) { transform: scale(0.97); }
+        .spill.is-unsettled {
+          background: color-mix(in oklch, var(--smoke) 80%, var(--midnight));
+          color: color-mix(in oklch, var(--bone) 45%, transparent);
+          border: 1px solid var(--border-subtle);
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+        .spill.is-unsettled:hover { box-shadow: none; }
         .spill.is-saved {
           background: var(--smoke);
           color: var(--verde);
