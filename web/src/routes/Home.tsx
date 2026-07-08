@@ -2,10 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'motion/react';
 import { IconKeyboard, IconMicrophone } from '@tabler/icons-react';
-import { platform } from '@mindstudio-ai/interface';
 import { Header } from '../components/Header';
 import { Atmosphere } from '../components/Atmosphere';
-import { ModeToggle } from '../components/ModeToggle';
 import { Shutter } from '../components/Shutter';
 import { AltButton } from '../components/AltButton';
 import { Viewfinder, type ViewfinderHandle } from '../components/Viewfinder';
@@ -15,6 +13,7 @@ import { VoiceCandle } from '../components/VoiceCandle';
 import { LibraryButton } from '../components/LibraryButton';
 import { useStore } from '../store';
 import { api } from '../api';
+import { uploadImage } from '../lib/upload';
 
 // Per-session greeting key — once shown in a tab session, don't show again.
 const GREETING_KEY = 'somm-greeting-shown';
@@ -28,21 +27,17 @@ function timeOfDayGreeting(): string {
   return 'Welcome back';
 }
 
-// Tagline by mode. Depth no longer varies the tagline now that depth
-// lives in the profile rather than the header.
-const TAGLINES: Record<string, string> = {
-  somm: 'What goes with what is in front of you.',
-  scan: 'Aim and identify.',
-};
+// Single unified tagline — mode is now determined by the backend.
+const TAGLINE = 'Show it what you have. It figures out the rest.';
 
 export function Home() {
   const [, navigate] = useLocation();
-  const mode = useStore((s) => s.mode);
   const depth = useStore((s) => s.depth);
   const user = useStore((s) => s.user);
-  const setPocketSommResult = useStore((s) => s.setPocketSommResult);
-  const setScanResult = useStore((s) => s.setScanResult);
-  const setCapturedImageUrl = useStore((s) => s.setCapturedImageUrl);
+  const setRouting = useStore((s) => s.setRouting);
+  const setResult = useStore((s) => s.setResult);
+  const setSession = useStore((s) => s.setSession);
+  const setScanError = useStore((s) => s.setScanError);
 
   const vfRef = useRef<ViewfinderHandle>(null);
   const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null);
@@ -54,6 +49,18 @@ export function Home() {
   const [greetingVisible, setGreetingVisible] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check for the recapture notice from an override redirect.
+  const [recaptureNotice, setRecaptureNotice] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('notice') === 'capture-again') {
+      // Clean the URL so the notice does not persist on refresh.
+      window.history.replaceState(null, '', '/');
+      return 'That context has expired. Point the camera again to start fresh.';
+    }
+    return null;
+  });
 
   const hasInteracted = useRef(false);
 
@@ -71,8 +78,11 @@ export function Home() {
     return () => clearTimeout(t);
   }, [user?.displayName]);
 
-  // Run a method (somm or scan) with the given input. Streaming status comes
-  // back via onStreamData and updates the scanning overlay.
+  // Run smartScan with the given input. Streaming status comes
+  // back via handlers and updates the scanning overlay. Navigation to
+  // /result happens on the first routing event — not the final result —
+  // so the user sees the result skeleton as soon as the backend decides
+  // the surface (identify vs pair).
   const runMethod = async (opts: { imageUrl?: string; text?: string }) => {
     setError(null);
     setScanning(true);
@@ -80,72 +90,64 @@ export function Home() {
     // the time we get here (transcribed before runMethod fires), so text and
     // voice share the same opener — by the moment Done is tapped, the user
     // has stopped speaking and the somm has stopped listening. "Considering"
-    // is the honest verb for both. Photos still get "Reading the room/label."
-    const opener = opts.imageUrl
-      ? mode === 'somm' ? 'Reading the room...' : 'Reading the label...'
-      : 'Considering...';
+    // is the honest verb for both. Photos still get "Reading the label."
+    const opener = opts.imageUrl ? 'Reading the label...' : 'Considering...';
     setStatus(opener);
 
-    // We listen for two kinds of stream payloads:
-    // - { status: '...' }: progress strings shown in the scanning overlay.
-    // - { partialResult: {...} }: the text-only result, sent the moment the
-    //   LLM finishes — lets us navigate to /result and show recommendation
-    //   cards with image placeholders BEFORE the photos finish generating.
-    let navigated = false;
-    const navigateOnceWithPartial = (kind: 'somm' | 'scan', partial: unknown) => {
-      if (navigated) return;
-      navigated = true;
-      if (kind === 'somm') {
-        setPocketSommResult(partial as Awaited<ReturnType<typeof api.pocketSomm>>);
-        setScanResult(null);
-      } else {
-        setScanResult(partial as Awaited<ReturnType<typeof api.reverseScan>>);
-        setPocketSommResult(null);
-      }
-      setCapturedImageUrl(opts.imageUrl ?? null);
-      setScanning(false);
-      navigate('/result');
-    };
+    setSession({ imageUrl: opts.imageUrl, text: opts.text });
 
-    const streamOpts = {
-      stream: true,
-      onStreamData: (data: { status?: string; partialResult?: unknown }) => {
-        if (data?.status) setStatus(data.status);
-        if (data?.partialResult) {
-          navigateOnceWithPartial(mode, data.partialResult);
-        }
-      },
-    };
+    let navigated = false;
 
     try {
-      if (mode === 'somm') {
-        const result = await (api.pocketSomm as unknown as (
-          input: Parameters<typeof api.pocketSomm>[0],
-          opts?: typeof streamOpts,
-        ) => Promise<Awaited<ReturnType<typeof api.pocketSomm>>>)({ ...opts, depth }, streamOpts);
-        // Final response — replace the partial state with the full one,
-        // which now has photoUrls. The cards swap their "Rendering" placeholders
-        // for actual images.
-        setPocketSommResult(result);
-        if (!navigated) {
-          setScanResult(null);
-          setCapturedImageUrl(opts.imageUrl ?? null);
-          setScanning(false);
-          navigate('/result');
-        }
-      } else {
-        const result = await (api.reverseScan as unknown as (
-          input: Parameters<typeof api.reverseScan>[0],
-          opts?: typeof streamOpts,
-        ) => Promise<Awaited<ReturnType<typeof api.reverseScan>>>)({ ...opts, depth }, streamOpts);
-        setScanResult(result);
-        if (!navigated) {
-          setPocketSommResult(null);
-          setCapturedImageUrl(opts.imageUrl ?? null);
-          setScanning(false);
-          navigate('/result');
-        }
-      }
+      await api.smartScan(
+        { imageUrl: opts.imageUrl, text: opts.text, depth },
+        {
+          onStatus: (text) => setStatus(text),
+          onRouting: (meta) => {
+            // Set routing metadata in the store so Result can render
+            // the correct surface immediately (skeleton-to-full).
+            setRouting(meta);
+            if (!navigated) {
+              navigated = true;
+              setScanning(false);
+              navigate('/result');
+            }
+          },
+          onResult: (res) => {
+            // Routing may have already navigated; if not (e.g. backend
+            // skipped the routing event), navigate now.
+            setRouting({ mode: res.mode, ambiguous: res.ambiguous, confidence: res.confidence });
+            setResult(res.data);
+            if (!navigated) {
+              navigated = true;
+              setScanning(false);
+              navigate('/result');
+            }
+          },
+          onError: (err) => {
+            if (err.code === 'CONTEXT_EXPIRED') {
+              // Whether navigated or not, send user back to Home with
+              // the recapture notice.
+              if (navigated) {
+                navigate('/?recapture=1');
+              } else {
+                setScanning(false);
+                setRecaptureNotice(
+                  'That context has expired. Point the camera again to start fresh.',
+                );
+              }
+              return;
+            }
+            if (navigated) {
+              // User is already on /result — surface the error there.
+              setScanError('Something went sideways. Try scanning again.');
+            } else {
+              setError(err.message || 'Need a moment. Take a sip.');
+              setScanning(false);
+            }
+          },
+        },
+      );
     } catch (err) {
       console.error('Method failed:', err);
       const msg = err instanceof Error ? err.message : 'Need a moment. Take a sip.';
@@ -158,6 +160,7 @@ export function Home() {
   const handleCapture = async () => {
     hasInteracted.current = true;
     setError(null);
+    setRecaptureNotice(null);
     const result = await vfRef.current?.capture();
     if (!result) {
       // No camera. Open text input as the natural fallback.
@@ -167,15 +170,15 @@ export function Home() {
     setCapturedDataUrl(result.dataUrl);
 
     try {
-      // Upload to CDN so the backend can analyzeImage by URL.
-      const url = await platform.uploadFile(
+      // Upload to server so the backend can analyze the image by URL.
+      const url = await uploadImage(
         new File([result.blob], 'capture.jpg', { type: 'image/jpeg' }),
       );
-      await runMethod({ imageUrl: typeof url === 'string' ? url : (url as { url: string }).url });
+      await runMethod({ imageUrl: url });
     } catch (err) {
       console.error('Upload failed:', err);
       setError('The image came through blurry. One more try?');
-      setCapturedDataUrl(null);
+      // Retain the captured preview so the user sees what they shot and can retry.
     }
   };
 
@@ -187,6 +190,7 @@ export function Home() {
   const handleLibraryPick = async (file: File) => {
     hasInteracted.current = true;
     setError(null);
+    setRecaptureNotice(null);
 
     // Read into a data URL so we can show the picked image in the viewfinder
     // while the upload runs in parallel. Same visual moment as a shutter
@@ -200,31 +204,33 @@ export function Home() {
     if (dataUrl) setCapturedDataUrl(dataUrl);
 
     try {
-      const url = await platform.uploadFile(file);
-      await runMethod({ imageUrl: typeof url === 'string' ? url : (url as { url: string }).url });
+      const url = await uploadImage(file);
+      await runMethod({ imageUrl: url });
     } catch (err) {
       console.error('Library upload failed:', err);
       setError('That image did not come through. One more try?');
-      setCapturedDataUrl(null);
+      // Retain the picked preview so the user can see it and retry.
     }
   };
 
   const handleText = async (text: string) => {
     hasInteracted.current = true;
     setTextOpen(false);
+    setRecaptureNotice(null);
     await runMethod({ text });
   };
 
   const handleVoice = async (text: string) => {
     hasInteracted.current = true;
     setVoiceOpen(false);
+    setRecaptureNotice(null);
     if (text.trim()) {
       await runMethod({ text });
     }
   };
 
   // Pick the right tagline.
-  const tagline = TAGLINES[mode] || TAGLINES.somm;
+  const tagline = TAGLINE;
 
   // Reset captured frame when the user backs out of scanning.
   useEffect(() => {
@@ -243,7 +249,6 @@ export function Home() {
         <Header />
 
         <main className="home__main">
-          <ModeToggle />
 
           {/*
             Quiet personalized greeting. Fades in once per session for users
@@ -292,7 +297,10 @@ export function Home() {
             </AltButton>
           </div>
 
-          <p className="home__tagline t-aside" key={mode}>{tagline}</p>
+          <p className="home__tagline t-aside">{tagline}</p>
+          {recaptureNotice && !error && (
+            <p className="home__notice t-caption">{recaptureNotice}</p>
+          )}
           {error && <p className="home__error t-caption">{error}</p>}
         </main>
 
@@ -340,6 +348,11 @@ export function Home() {
         .home__error {
           color: color-mix(in oklch, var(--bordeaux) 80%, var(--bone));
           margin-top: 4px;
+        }
+        .home__notice {
+          color: color-mix(in oklch, var(--ember) 80%, var(--bone));
+          margin-top: 4px;
+          text-align: center;
         }
         .home__greeting {
           /* Holds vertical space whether or not the greeting is visible,

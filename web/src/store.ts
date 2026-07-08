@@ -1,15 +1,32 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CellarEntry, Depth, Mode, PocketSommOutput, ScanResult, User } from './types';
+import type {
+  CellarEntry,
+  Depth,
+  PocketSommOutput,
+  ResultMode,
+  RoutingMeta,
+  ScanResult,
+  User,
+} from './types';
 
 // Global frontend state. The store holds:
 // - The current user (or null if anonymous)
 // - The cellar (loaded once on app boot)
-// - The active home/mode/depth selections
+// - The depth preference
+// - Routing state from the smartScan SSE stream (resultMode, ambiguous, confidence)
 // - The active result we're displaying (so /result has something to show)
+// - Session context (imageUrl/text) for the current scan, memory-only
 // - A pending unsaved entry waiting for auth (the "save while logged out"
 //   pattern from the spec)
 // - The film grain / theme preference (persisted in localStorage)
+
+export interface ScanSession {
+  imageUrl?: string; // uploaded image URL for the current scan
+  text?: string; // typed/transcribed text for the current scan
+}
+
+export type SmartScanData = ScanResult | PocketSommOutput;
 
 interface PendingSave {
   // What the user wanted to save before they hit auth. Re-fired after auth.
@@ -38,20 +55,31 @@ interface Store {
   // Home preferences
   depth: Depth;
   setDepth: (d: Depth) => void;
-  mode: Mode;
-  setMode: (m: Mode) => void;
 
   // Theme
   theme: 'midnight' | 'day';
   toggleTheme: () => void;
 
-  // Active result / scan
-  pocketSommResult: PocketSommOutput | null;
-  scanResult: ScanResult | null;
-  capturedImageUrl: string | null;
-  setPocketSommResult: (r: PocketSommOutput | null) => void;
-  setScanResult: (r: ScanResult | null) => void;
-  setCapturedImageUrl: (u: string | null) => void;
+  // Routing state from the smartScan SSE stream
+  resultMode: ResultMode | null;
+  ambiguous: boolean;
+  confidence: 'high' | 'medium' | 'low' | null;
+
+  // Active result (ScanResult when identify, PocketSommOutput when pair)
+  result: SmartScanData | null;
+  setRouting: (meta: RoutingMeta) => void;
+  setResult: (data: SmartScanData) => void;
+
+  // Session context for the current scan (memory-only, never persisted)
+  session: ScanSession | null;
+  setSession: (s: ScanSession | null) => void;
+
+  // Clears result, routing, and session when navigating back to Home
+  clearScan: () => void;
+
+  // Stream error surfaced on the Result screen (set by Home or override flows)
+  scanError: string | null;
+  setScanError: (msg: string | null) => void;
 
   // Pending save through auth
   pendingSave: PendingSave | null;
@@ -93,18 +121,43 @@ export const useStore = create<Store>()(
 
       depth: 'enthusiast',
       setDepth: (d) => set({ depth: d }),
-      mode: 'somm',
-      setMode: (m) => set({ mode: m }),
 
       theme: 'midnight',
       toggleTheme: () => set((s) => ({ theme: s.theme === 'midnight' ? 'day' : 'midnight' })),
 
-      pocketSommResult: null,
-      scanResult: null,
-      capturedImageUrl: null,
-      setPocketSommResult: (r) => set({ pocketSommResult: r }),
-      setScanResult: (r) => set({ scanResult: r }),
-      setCapturedImageUrl: (u) => set({ capturedImageUrl: u }),
+      // Routing state
+      resultMode: null,
+      ambiguous: false,
+      confidence: null,
+
+      // Active result
+      result: null,
+      setRouting: (meta) =>
+        set({
+          resultMode: meta.mode,
+          ambiguous: meta.ambiguous,
+          confidence: meta.confidence,
+        }),
+      setResult: (data) => set({ result: data }),
+
+      // Session context
+      session: null,
+      setSession: (s) => set({ session: s }),
+
+      // Clear all scan state (called when navigating back to Home)
+      clearScan: () =>
+        set({
+          resultMode: null,
+          ambiguous: false,
+          confidence: null,
+          result: null,
+          session: null,
+          scanError: null,
+        }),
+
+      // Stream error surfaced on the Result screen
+      scanError: null,
+      setScanError: (msg) => set({ scanError: msg }),
 
       pendingSave: null,
       setPendingSave: (s) => set({ pendingSave: s }),
