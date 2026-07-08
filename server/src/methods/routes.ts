@@ -16,6 +16,7 @@ import { updateProfile } from './updateProfile';
 import { regenerateTasteSummary } from './regenerateTasteSummary';
 import { pocketSomm } from './pocketSomm';
 import { reverseScan } from './reverseScan';
+import { smartScan } from './smartScan';
 import { transcribeVoice } from './transcribeVoice';
 
 // Each method is exposed as POST /api/<camelCaseName>, matching the names the
@@ -24,11 +25,26 @@ import { transcribeVoice } from './transcribeVoice';
 // resolves correctly.
 export const apiRoutes = new Hono<AppEnv>();
 
+/**
+ * Messages that indicate the caller must sign in. When a method throws one of
+ * these, the wrapper returns 401 with code `sign_in_required` so the frontend
+ * can trigger the email-code auth flow (Requirements 1.5, 1.6).
+ */
+const SIGN_IN_MESSAGES = ['Sign in to save to your cellar.'];
+
 function post<I extends object, O>(path: string, fn: (input: I) => Promise<O>): void {
   apiRoutes.post(path, async (c) => {
     const input = (await c.req.json<I>().catch(() => ({}))) as I;
-    const result = await runMethod(c, () => fn(input));
-    return c.json(result as Record<string, unknown>);
+    try {
+      const result = await runMethod(c, () => fn(input));
+      return c.json(result as Record<string, unknown>);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      if (SIGN_IN_MESSAGES.includes(message)) {
+        return c.json({ error: { code: 'sign_in_required', message } }, 401);
+      }
+      return c.json({ error: { code: 'method_error', message } }, 400);
+    }
   });
 }
 
@@ -110,7 +126,11 @@ function sseMethod<I extends object, O>(path: string, fn: (input: I) => Promise<
         await sse.writeSSE({ data: JSON.stringify({ result }) });
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Something went wrong.';
-        await sse.writeSSE({ data: JSON.stringify({ error: { message } }) });
+        const code =
+          err instanceof Error && 'code' in err && typeof (err as { code: unknown }).code === 'string'
+            ? (err as { code: string }).code
+            : undefined;
+        await sse.writeSSE({ data: JSON.stringify({ error: { message, ...(code && { code }) } }) });
       }
     });
   });
@@ -118,3 +138,4 @@ function sseMethod<I extends object, O>(path: string, fn: (input: I) => Promise<
 
 sseMethod('/pocketSomm', pocketSomm);
 sseMethod('/reverseScan', reverseScan);
+sseMethod('/smartScan', smartScan);

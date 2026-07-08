@@ -25,8 +25,9 @@ export async function updateCellarEntry(input: UpdateInput) {
 
   const entry = await CellarEntries.update(input.id, safe);
 
-  // If the change affects taste profile, kick a background regen. `owned` is
-  // deliberately NOT here: ownership has zero effect on taste signal.
+  // INVARIANT: Regen fires only for taste-relevant fields. `owned` is deliberately
+  // excluded — toggling ownership must never trigger taste-summary regeneration.
+  // See design correctness property 2.
   const profileFields: (keyof CellarEntry)[] = ['notes', 'tastedAt', 'kind', 'producer', 'tasted'];
   if (profileFields.some((k) => k in input.patch)) {
     const userId = auth.userId;

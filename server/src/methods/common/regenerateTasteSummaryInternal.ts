@@ -25,9 +25,10 @@ export async function runTasteSummaryRegen(userId: string): Promise<void> {
       .take(50),
   );
 
-  // Taste intelligence is built ONLY from tasted entries. `tasted !== false`
+  // INVARIANT: Taste intelligence is built ONLY from tasted entries. `tasted !== false`
   // includes explicit true AND legacy null rows, excluding only entries the
-  // user has explicitly un-marked as tasted.
+  // user has explicitly un-marked as tasted. Entries where only `owned` changed
+  // are never excluded — `owned` has no bearing on the taste signal.
   const tastedEntries = entries.filter((e) => e.tasted !== false);
 
   const seed = user?.tasteSeed?.trim();

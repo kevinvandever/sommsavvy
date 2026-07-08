@@ -69,6 +69,58 @@ function parseJsonLoosely(raw: string): unknown {
 
 // ---- Public types (kept stable for the ported methods) ----
 
+/**
+ * Subject classification returned by the analysis pass.
+ * The single-pass prompt classifies the subject alongside card fields,
+ * requiring no extra AI call.
+ */
+export type SubjectClass = 'bottle-like' | 'pairing-like' | 'ambiguous' | 'none';
+
+/**
+ * The typed structure of a parsed analysis response that includes subject
+ * classification. Consumers parse the raw string (from analyzeImage) or the
+ * structured object (from generateText) into this shape. No extra provider
+ * dependency is needed — standard JSON.parse handles it.
+ */
+export interface ClassifiedAnalysisResult {
+  subjectClass: SubjectClass;
+  /** Present when subjectClass is pairing-like */
+  context?: string;
+  /** Present when subjectClass is bottle-like, ambiguous, or none */
+  name?: string;
+  kind?: 'wine' | 'beer' | 'spirits';
+  producer?: string | null;
+  region?: string | null;
+  vintage?: number | null;
+  abv?: number | null;
+  expect?: string;
+  monocleAside?: string | null;
+  pairings?: string[];
+  valueNote?: string;
+  occasion?: string;
+  confidence?: 'high' | 'medium' | 'low';
+  imagePrompt?: string;
+}
+
+/**
+ * Parse and validate a SubjectClass value from raw model output.
+ * Returns 'none' for unrecognized or missing values. No extra provider
+ * dependency — pure string matching.
+ */
+export function parseSubjectClass(raw: unknown): SubjectClass {
+  if (typeof raw !== 'string') return 'none';
+  const lower = raw.trim().toLowerCase();
+  if (lower === 'bottle-like') return 'bottle-like';
+  if (lower === 'pairing-like') return 'pairing-like';
+  if (lower === 'ambiguous') return 'ambiguous';
+  if (lower === 'none') return 'none';
+  // Fuzzy fallbacks for model variance
+  if (lower.includes('bottle')) return 'bottle-like';
+  if (lower.includes('pair') || lower.includes('food') || lower.includes('dish'))
+    return 'pairing-like';
+  return 'none';
+}
+
 export interface AnalyzeImageArgs {
   prompt: string;
   imageUrl: string;
