@@ -44,7 +44,7 @@
 - **What:** patterns and prompts drawn from the cellar (leanings, gaps, gentle nudges).
 - **Depends on:** Taste Seeding, a growing tasted cellar.
 - **Unblocks:** Opening Notes, Drinking Windows, Year in Review.
-- **First slice — Cellar Search:** natural-language search over the cellar ("a nice red for salmon"), interpreted against identity, notes, pairings, and occasion; returns owned bottles with a reason each, never a score. Stands alone (needs only the existing cellar), so it can ship ahead of the rest of the lane. **Spec:** `.kiro/specs/cellar-search` (requirements.md + design.md ready; tasks pending).
+- **First slice — Cellar Search — `shipped`:** natural-language search over the cellar ("a nice red for salmon"), interpreted against identity, notes, pairings, and occasion; returns owned bottles with a reason each, never a score. Grounded strictly in the user's own rows, with a keyword fallback so it never regresses. **Spec:** `.kiro/specs/cellar-search` (shipped, PR #5). Proves the reasoning-over-a-projection pattern the rest of the lane builds on.
 
 ---
 
