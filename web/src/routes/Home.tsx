@@ -11,7 +11,7 @@ import { ScanningOverlay } from '../components/ScanningOverlay';
 import { TextInputSheet } from '../components/TextInputSheet';
 import { VoiceCandle } from '../components/VoiceCandle';
 import { LibraryButton } from '../components/LibraryButton';
-import { useStore } from '../store';
+import { useStore, type SmartScanData } from '../store';
 import { api } from '../api';
 import { uploadImage } from '../lib/upload';
 
@@ -113,9 +113,14 @@ export function Home() {
               navigate('/result');
             }
           },
+          onPartial: (data) => {
+            // The backend streams the text card before portrait generation.
+            // Populate the store so Result can render the card text immediately
+            // instead of showing a skeleton for the full duration.
+            setResult(data as SmartScanData);
+          },
           onResult: (res) => {
-            // Routing may have already navigated; if not (e.g. backend
-            // skipped the routing event), navigate now.
+            // Final result includes the portrait URL. Replace the partial.
             setRouting({ mode: res.mode, ambiguous: res.ambiguous, confidence: res.confidence });
             setResult(res.data);
             if (!navigated) {
