@@ -4,31 +4,35 @@
 
 **North-star:** The engaged enthusiast keeps adding tasted bottles to their cellar, so the taste profile sharpens and every recommendation feels more like theirs. Growth of tasted cellar entries per active user is the signal the product is working.
 
-**Last updated:** July 2026 · **Currently building:** Smart Scan (shipped) → Scan Web Enrichment (next up)
+**Last updated:** July 2026 · **Currently building:** nothing in flight — Smart Scan, Scan Web Enrichment, and Cellar Search all shipped. Next up: Taste Seeding.
 
 ---
 
-## Now
+## Shipped
+*Merged to main and verified in production.*
 
-### Smart Scan — Intent Routing & Capture-First Reverse Scan — `shipped`
+### Smart Scan — Intent Routing & Capture-First Reverse Scan
 - **What:** one scan surface that auto-routes a bottle to identify + capture and a dish/menu to pairings; capture-first save with tasted defaulting true.
-- **Depends on:** MVP scan/cellar/auth (done), cost guardrails (done).
-- **Unblocks:** faster cellar growth, richer taste profile, cleaner base for taste-seeding and cellar-intelligence.
-- **Specs:** `.kiro/specs/smart-scan-intent-routing`, `.kiro/specs/smart-scan-frontend` (both shipped and merged to main).
+- **Unblocked:** faster cellar growth, richer taste profile, the base for enrichment / cellar search.
+- **Specs:** `.kiro/specs/smart-scan-intent-routing`, `.kiro/specs/smart-scan-frontend`.
 
-### Scan Web Enrichment — `next up` (prioritized)
-- **What:** after a bottle is identified, a bounded web-search pass grounds the card's tasting notes, value read, and producer/region context in real sources. Non-fatal, timeboxed, ships dark until a provider key is set. Strengthens the weakest part of the current scan.
-- **Depends on:** Smart Scan (identification path).
-- **Unblocks:** more trustworthy cards → more saves → richer taste profile. Also seeds a reusable `webSearch` capability for later features (The Hunt, Vintage Intelligence).
-- **Spec:** `.kiro/specs/scan-web-enrichment` (requirements.md + design.md ready; tasks pending).
-- **Why prioritized:** user-requested; directly lifts the quality of every scan, the top of the funnel.
+### Scan Web Enrichment
+- **What:** after a bottle is identified, a bounded web-search pass (You.com) grounds the card's tasting notes, value read, and producer/region context in real sources. Non-fatal, timeboxed, ships dark until a provider key is set; translates any retrieved scores into qualitative voice (no numeric ratings).
+- **Verified:** live in production (`scan_enriched` / `outcome: enriched` in logs); no score leakage confirmed.
+- **Unblocked:** more trustworthy cards → more saves; a reusable `webSearch` capability for later features (The Hunt, Vintage Intelligence).
+- **Spec:** `.kiro/specs/scan-web-enrichment`.
+
+### Cellar Search (+ ownership awareness) — first slice of Cellar Intelligence
+- **What:** natural-language search over the cellar ("a nice red for salmon"), interpreted against identity, notes, pairings, and occasion; returns the user's own bottles with a reason each, never a score. Grounded strictly in the user's own rows; keyword fallback so it never regresses. Whole-cellar search flags availability ("in your rack" vs "you'll need a bottle") and prefers on-hand bottles for occasion queries; the "In the Rack" chip is a hard owned-only filter.
+- **Unblocked:** proves the reasoning-over-a-projection pattern the rest of the Cellar Intelligence lane builds on.
+- **Spec:** `.kiro/specs/cellar-search` (PRs #5, #8).
 
 ---
 
 ## Next
 *Sequenced from the Living Cellar lane, the taste flywheel first.*
 
-### Taste Seeding
+### Taste Seeding — `up next`
 - **What:** warm up a new user's taste profile fast so recommendations feel personal before the cellar is deep.
 - **Depends on:** Smart Scan (more entries), MVP taste profile.
 - **Unblocks:** Cellar Intelligence.
@@ -40,11 +44,10 @@
 - **Unblocks:** inventory features (drinking windows, home bar).
 - **Why it matters:** separates the journal from the inventory; both flywheels need it.
 
-### Cellar Intelligence
-- **What:** patterns and prompts drawn from the cellar (leanings, gaps, gentle nudges).
-- **Depends on:** Taste Seeding, a growing tasted cellar.
+### Cellar Intelligence (deeper)
+- **What:** the standing-insight layer beyond on-demand search — passive patterns and gentle nudges drawn from the cellar (leanings, gaps, "you keep coming back to structured Rhône reds," "your whites are thin," time-of-year prompts).
+- **Depends on:** Taste Seeding, a growing tasted cellar. Builds on the reasoning-over-a-projection pattern proven by Cellar Search (shipped).
 - **Unblocks:** Opening Notes, Drinking Windows, Year in Review.
-- **First slice — Cellar Search — `shipped`:** natural-language search over the cellar ("a nice red for salmon"), interpreted against identity, notes, pairings, and occasion; returns owned bottles with a reason each, never a score. Grounded strictly in the user's own rows, with a keyword fallback so it never regresses. **Spec:** `.kiro/specs/cellar-search` (shipped, PR #5). Proves the reasoning-over-a-projection pattern the rest of the lane builds on.
 
 ---
 
