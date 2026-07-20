@@ -1,0 +1,263 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "2. Refactor reverseScan and pocketSomm into reusable internal functions": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092405
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531102944
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531961181
+      }
+    ],
+    "3.1 Create `server/src/methods/smartScan.ts` as an `sseMethod` accepting `{ imageUrl?, text?, depth?, forceMode?: 'identify' | 'pair' }`": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092499
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531973906
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783532270345
+      }
+    ],
+    "3.2 Carry routing metadata in the streamed result": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092536
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537095406
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537310768
+      }
+    ],
+    "3.3 Register `smartScan` as an `sseMethod` route in `server/src/methods/routes.ts`": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092613
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537096787
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537311584
+      }
+    ],
+    "4.1 Add vintage range validation to `server/src/methods/saveCellarEntry.ts`": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092636
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531103838
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531962220
+      }
+    ],
+    "4.2 Set scan flags explicitly on save": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092656
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531104654
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531963656
+      }
+    ],
+    "8.1 Unrecognized subject": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092679
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537097795
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537312375
+      }
+    ],
+    "8.2 Provider error or 30-second timeout": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092707
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537098815
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537313293
+      }
+    ],
+    "8.3 Portrait unavailable": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092729
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537099669
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537314102
+      }
+    ],
+    "10.1 Wire or extend the project's property-based testing setup so Properties 1 through 9 run against stubbed analysis/model responses, integrated into the existing test command": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531092747
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531105586
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531965276
+      }
+    ],
+    "4. Harden the save path for scan captures": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531963683
+      }
+    ],
+    "10. Property-based test harness and routing determinism": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783531965296
+      }
+    ],
+    "1. Add subject classification to the analysis layer": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783532296200
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783536920129
+      }
+    ],
+    "5. Preserve taste-regeneration invariants": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783536946080
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537074338
+      }
+    ],
+    "6. Enforce the identification-card contract and edited-value persistence": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783536946919
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537075212
+      }
+    ],
+    "3. Implement the smartScan classify-and-route entry method": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537311652
+      }
+    ],
+    "8. Implement failure and recovery paths": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537314152
+      }
+    ],
+    "7. Implement override handling": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537325376
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537581070
+      }
+    ],
+    "9. Cover the anonymous save-and-resume contract": [
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537327224
+      },
+      {
+        "executionId": "c23baf8b-d00b-4547-b196-54dd323314c7",
+        "chatSessionId": "sess_887635b6-050d-4080-8b89-a2e31b09a141",
+        "timestamp": 1783537582005
+      }
+    ]
+  }
+}

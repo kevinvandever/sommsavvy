@@ -13,7 +13,9 @@
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/scripts/seed.ts",
     "import": "tsx src/scripts/import-mindstudio.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
@@ -31,6 +33,9 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
-    "typescript": "^5.7.2"
+    "@vitest/coverage-v8": "^4.1.10",
+    "fast-check": "^4.8.0",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.10"
   }
 }
