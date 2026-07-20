@@ -7,9 +7,10 @@ import { Atmosphere } from '../components/Atmosphere';
 import { CellarMosaic } from '../components/CellarMosaic';
 import { AuthSheet } from '../components/AuthSheet';
 import { useStore } from '../store';
+import { api } from '../api';
 import { img } from '../lib/cdn';
 import { EASE, DUR } from '../lib/motion';
-import type { Kind } from '../types';
+import type { CellarEntry, Kind } from '../types';
 
 // Boot-time placeholder. Reserves the visual space the mosaic will take so
 // that switching from "loading" to "loaded" doesn't shift layout.
@@ -121,22 +122,83 @@ export function Cellar() {
     if (booted && !user) setAuthOpen(true);
   }, [booted, user]);
 
-  const visible = useMemo(() => {
+  // Search state. When a query is active, results come from the backend
+  // interpretation (searchCellar); when empty, we show the client-side
+  // filtered view instantly.
+  const [searchResults, setSearchResults] = useState<CellarEntry[] | null>(null);
+  const [searchReasons, setSearchReasons] = useState<Record<string, string>>({});
+  const [searching, setSearching] = useState(false);
+  const [usedFallback, setUsedFallback] = useState(false);
+
+  // The active filter chips, translated into backend params.
+  const filterParams = useMemo(() => {
+    if (filter === 'rack') return { owned: true as const };
+    if (filter === 'wine' || filter === 'beer' || filter === 'spirits') return { kind: filter };
+    return {};
+  }, [filter]);
+
+  // Client-side filtered set — used directly when the query is empty, and as
+  // the base for the local fallback.
+  const filtered = useMemo(() => {
     let entries = cellar;
     if (filter === 'rack') {
-      // Ownership filter: only bottles physically held.
       entries = entries.filter((e) => e.owned === true);
     } else if (filter !== 'all') {
       entries = entries.filter((e) => e.kind === filter);
     }
-    if (search.trim()) {
-      const needle = search.trim().toLowerCase();
-      entries = entries.filter((e) =>
-        [e.name, e.producer, e.region, e.notes].filter(Boolean).join(' ').toLowerCase().includes(needle),
-      );
-    }
     return entries;
-  }, [cellar, filter, search]);
+  }, [cellar, filter]);
+
+  // Debounced natural-language search. Interprets the query against the
+  // user's own cellar via the backend; keeps prior results on screen while a
+  // new query is in flight so the grid does not flash.
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) {
+      setSearchResults(null);
+      setSearchReasons({});
+      setSearching(false);
+      setUsedFallback(false);
+      return;
+    }
+    setSearching(true);
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      try {
+        const { matches, usedFallback: fb } = await api.searchCellar({ query: q, ...filterParams });
+        if (cancelled) return;
+        setSearchResults(matches.map((m) => m.entry));
+        const reasons: Record<string, string> = {};
+        for (const m of matches) if (m.reason) reasons[m.entry.id] = m.reason;
+        setSearchReasons(reasons);
+        setUsedFallback(fb);
+      } catch {
+        // Unexpected client/network error — degrade to a local substring match
+        // so the search still returns something usable.
+        if (cancelled) return;
+        const needle = q.toLowerCase();
+        const local = filtered.filter((e) =>
+          [e.name, e.producer, e.region, e.notes]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(needle),
+        );
+        setSearchResults(local);
+        setSearchReasons({});
+        setUsedFallback(true);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [search, filterParams, filtered]);
+
+  const hasQuery = search.trim().length > 0;
+  const visible = hasQuery ? (searchResults ?? []) : filtered;
 
   // Show the empty / signed-out states only after boot to avoid flashing.
   const showSignedOut = booted && !user;
@@ -214,8 +276,25 @@ export function Cellar() {
                 />
               </div>
 
-              {visible.length === 0 ? (
-                filter === 'rack' && !search.trim() ? (
+              {/* Quiet, non-blocking progress while interpreting a query. */}
+              {searching && (
+                <p className="t-caption cellar__searching" aria-live="polite">
+                  Looking through your cellar
+                </p>
+              )}
+
+              {visible.length === 0 && !searching ? (
+                hasQuery ? (
+                  // No entry meaningfully fit the request. Warm, not an error;
+                  // the query stays editable so the user can adjust.
+                  <div className="cellar__no-match">
+                    <p className="t-aside">Nothing in your cellar quite fits that.</p>
+                    <p className="t-caption">Try asking a different way, or loosen the filters.</p>
+                    <button className="btn-tertiary" onClick={() => setSearch('')}>
+                      Clear search
+                    </button>
+                  </div>
+                ) : filter === 'rack' ? (
                   // Distinct empty state for the ownership filter — nothing
                   // is marked as held yet. In voice, an invitation not an error.
                   <div className="cellar__no-match">
@@ -227,15 +306,25 @@ export function Cellar() {
                   </div>
                 ) : (
                   <div className="cellar__no-match">
-                    <p className="t-aside">Nothing in the cellar matches that.</p>
-                    <p className="t-caption">Try a different word, or the bottle&rsquo;s full name. The search is fussy.</p>
-                    <button className="btn-tertiary" onClick={() => { setSearch(''); setFilter('all'); }}>
-                      Clear search
+                    <p className="t-aside">Nothing here under that filter.</p>
+                    <button className="btn-tertiary" onClick={() => setFilter('all')}>
+                      Back to all
                     </button>
                   </div>
                 )
               ) : (
-                <CellarMosaic entries={visible} hideOwnedDots={filter === 'rack'} />
+                <>
+                  {hasQuery && usedFallback && !searching && (
+                    <p className="t-caption cellar__fallback-note">
+                      Showing a simpler word match for now.
+                    </p>
+                  )}
+                  <CellarMosaic
+                    entries={visible}
+                    hideOwnedDots={filter === 'rack'}
+                    reasons={hasQuery ? searchReasons : undefined}
+                  />
+                </>
               )}
             </>
           )}
@@ -374,6 +463,19 @@ export function Cellar() {
           gap: 8px;
         }
         .cellar__no-match .btn-tertiary { align-self: center; }
+        .cellar__searching {
+          color: color-mix(in oklch, var(--bone) 55%, transparent);
+          margin-bottom: 16px;
+          animation: cellar-searching-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes cellar-searching-pulse {
+          0%, 100% { opacity: 0.5; }
+          50%      { opacity: 1; }
+        }
+        .cellar__fallback-note {
+          color: color-mix(in oklch, var(--bone) 55%, transparent);
+          margin-bottom: 16px;
+        }
       `}</style>
     </div>
   );

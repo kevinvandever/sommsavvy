@@ -7,13 +7,16 @@ interface Props {
   // When the "In the Rack" filter is active, every tile is owned, so the
   // per-tile owned dot is suppressed (it would be noise).
   hideOwnedDots?: boolean;
+  // When a natural-language search is active, a short reason per entry
+  // explaining why it fit the query, keyed by entry id.
+  reasons?: Record<string, string>;
 }
 
 // Asymmetric mosaic. We feature *judiciously* — too many wide tiles makes
 // the grid feel chaotic. Logic: a featured tile is a 5-star entry that's
 // also recent, OR every-Nth entry to give the eye a rhythm. Caps at ~25%
 // featured so most of the grid stays standard.
-export function CellarMosaic({ entries, hideOwnedDots }: Props) {
+export function CellarMosaic({ entries, hideOwnedDots, reasons }: Props) {
   const week = 7 * 24 * 60 * 60 * 1000;
 
   // Pick the featured set up front so the visual rhythm is intentional.
@@ -40,6 +43,7 @@ export function CellarMosaic({ entries, hideOwnedDots }: Props) {
             entry={entry}
             featured={featuredIds.has(entry.id)}
             hideOwnedDot={hideOwnedDots}
+            reason={reasons?.[entry.id]}
           />
         ))}
       </AnimatePresence>
