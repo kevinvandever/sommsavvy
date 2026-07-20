@@ -323,6 +323,7 @@ export function Cellar() {
                     entries={visible}
                     hideOwnedDots={filter === 'rack'}
                     reasons={hasQuery ? searchReasons : undefined}
+                    showAvailability={hasQuery && filter !== 'rack'}
                   />
                 </>
               )}

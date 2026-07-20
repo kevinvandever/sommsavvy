@@ -14,6 +14,9 @@ interface Props {
   // When a natural-language search surfaced this tile, a short reason it fit
   // the query. Shown as a quiet caption in the tile body.
   reason?: string;
+  // Show an availability tag (in your rack / not on hand) during a whole-cellar
+  // search, so the user knows what they can open now versus grab elsewhere.
+  showAvailability?: boolean;
 }
 
 // Curated chiaroscuro stand-ins for entries that arrived without an
@@ -35,12 +38,14 @@ function placeholderFor(id: string): string {
 }
 
 // A single cellar tile in the asymmetric mosaic.
-export function CellarTile({ entry, featured, hideOwnedDot, reason }: Props) {
+export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailability }: Props) {
   const [, navigate] = useLocation();
   const isNew = Date.now() - entry.savedAt < 7 * 24 * 60 * 60 * 1000;
   const photoSrc = entry.photoUrl || placeholderFor(entry.id);
   const usingPlaceholder = !entry.photoUrl;
-  const showOwnedDot = entry.owned === true && !hideOwnedDot;
+  // The availability tag (search mode) already states ownership, so the photo
+  // dot would be redundant there; show the dot only outside that case.
+  const showOwnedDot = entry.owned === true && !hideOwnedDot && !showAvailability;
 
   return (
     <motion.article
@@ -98,6 +103,11 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason }: Props) {
           </p>
         )}
         {reason && <p className="tile__reason">{reason}</p>}
+        {showAvailability && (
+          <p className={`tile__avail ${entry.owned === true ? 'is-owned' : 'is-away'}`}>
+            {entry.owned === true ? 'In your rack' : "You'll need a bottle"}
+          </p>
+        )}
       </div>
 
       <style>{`
@@ -205,6 +215,27 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason }: Props) {
           margin-top: 8px;
           font: italic 13px/1.35 var(--font-rowan);
           color: color-mix(in oklch, var(--ember) 70%, var(--bone));
+        }
+        .tile__avail {
+          margin-top: 8px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font: 500 10px var(--font-geist);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .tile__avail::before {
+          content: '';
+          width: 6px; height: 6px;
+          border-radius: var(--radius-pill);
+          background: currentColor;
+        }
+        .tile__avail.is-owned {
+          color: var(--owned);
+        }
+        .tile__avail.is-away {
+          color: color-mix(in oklch, var(--bone) 50%, transparent);
         }
       `}</style>
     </motion.article>

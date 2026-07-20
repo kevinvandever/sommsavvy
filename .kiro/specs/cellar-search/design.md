@@ -116,6 +116,17 @@ All model output is treated as selection metadata only; entry content always com
 
 Ships behind graceful degradation: with no AI provider configured, the cellar search behaves exactly as today (keyword filter). Enabling the provider turns on interpretation. Because the frontend keeps the keyword path for empty queries and for fallback, there is no regression risk to the existing cellar experience.
 
+## Ownership awareness (Requirement 6)
+
+The cellar spans two independent axes: `tasted` (shapes the taste profile) and `owned` (drives inventory / "In the Rack"). A whole-cellar search therefore includes bottles the user has tasted but no longer holds, which is correct for a journal but can surprise an occasion query ("what should I open tonight").
+
+The blend:
+- **"In the Rack" chip = hard filter.** Already implemented: `filter === 'rack'` sends `owned: true`, and `searchCellar` restricts the candidate set to `owned === true`. Results are only bottles on hand.
+- **"All" / kind search = ownership-aware, not filtered.** The projection sent to the model carries an `owned` flag per entry, and the prompt states the cellar mixes on-hand and not-on-hand bottles. For drink-now/occasion requests the model prefers on-hand bottles but may still surface a strong non-owned match. Nothing is excluded.
+- **Availability is rendered deterministically, not by the model.** The reason text describes fit only; the UI shows a per-tile availability tag ("In your rack" vs "You'll need a bottle") computed from `entry.owned`. This keeps availability accurate regardless of model phrasing and avoids the model asserting ownership it might get wrong. The tag is shown only during a whole-cellar search (`showAvailability = hasQuery && filter !== 'rack'`); in rack-only search every result is owned, so the tag and the photo owned-dot are suppressed as redundant.
+
+This touches only the `owned` axis; `tasted` and the taste profile are unaffected.
+
 ## Relationship to the Roadmap
 
 This is the first shipped slice of the **Cellar Intelligence** lane. It stands alone (needs only the existing cellar) and lays groundwork for later intelligence features (leanings, gaps, nudges) by proving the pattern of reasoning over a projection of the user's own entries.
