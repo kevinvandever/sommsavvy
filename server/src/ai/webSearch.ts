@@ -91,20 +91,42 @@ export async function webSearch(args: WebSearchArgs): Promise<{ results: WebSear
   }
 }
 
+// Locate the array of result objects wherever the provider puts it. You.com's
+// v1 API returns `results` as an OBJECT of sub-arrays (e.g. results.web); the
+// classic API returned a top-level `hits` array; others use a top-level
+// `results` array. We check the known shapes, then fall back to the first
+// array of objects we find one level down. Exported for testing.
+export function extractRawList(obj: Record<string, unknown>): unknown[] {
+  // Top-level arrays.
+  if (Array.isArray(obj.results)) return obj.results;
+  if (Array.isArray(obj.hits)) return obj.hits;
+
+  // `results` as an object of sub-arrays (You.com v1).
+  const nested = obj.results;
+  if (nested && typeof nested === 'object') {
+    const n = nested as Record<string, unknown>;
+    // Prefer web results, then other known buckets.
+    for (const key of ['web', 'news', 'results', 'items', 'hits']) {
+      if (Array.isArray(n[key])) return n[key] as unknown[];
+    }
+    // Fallback: the first array value present.
+    for (const v of Object.values(n)) {
+      if (Array.isArray(v)) return v as unknown[];
+    }
+  }
+
+  return [];
+}
+
 // ---- Defensive response parsing ----
 // You.com has shipped a few response shapes over time and other providers
 // differ. Rather than bind to one, pull results from the common containers
-// (`results` / `hits`) and coalesce the text fields we care about.
-// Exported for unit testing.
+// and coalesce the text fields we care about. Exported for unit testing.
 
 export function parseWebSearchResults(body: unknown, maxResults: number): WebSearchResult[] {
   if (!body || typeof body !== 'object') return [];
 
-  const obj = body as Record<string, unknown>;
-  const rawList =
-    (Array.isArray(obj.results) && obj.results) ||
-    (Array.isArray(obj.hits) && obj.hits) ||
-    [];
+  const rawList = extractRawList(body as Record<string, unknown>);
 
   const out: WebSearchResult[] = [];
   for (const item of rawList as unknown[]) {
@@ -114,18 +136,20 @@ export function parseWebSearchResults(body: unknown, maxResults: number): WebSea
     const title = typeof r.title === 'string' ? r.title : '';
     const url = typeof r.url === 'string' ? r.url : '';
 
-    // `snippets` is an array of passages on You.com; fall back to a single
-    // `snippet` or `description` string from other providers.
-    let snippet = '';
-    if (Array.isArray(r.snippets)) {
-      snippet = (r.snippets as unknown[])
-        .filter((s): s is string => typeof s === 'string')
-        .join(' ');
-    } else if (typeof r.snippet === 'string') {
-      snippet = r.snippet;
-    } else if (typeof r.description === 'string') {
-      snippet = r.description;
-    }
+    // Coalesce the text field across provider shapes. You.com returns
+    // `snippets` (array of passages); others use `snippet`, `description`,
+    // `passages` (array), or `content`/`text`.
+    const joinStrings = (v: unknown): string =>
+      Array.isArray(v)
+        ? v.filter((s): s is string => typeof s === 'string').join(' ')
+        : '';
+    const snippet =
+      joinStrings(r.snippets) ||
+      joinStrings(r.passages) ||
+      (typeof r.snippet === 'string' ? r.snippet : '') ||
+      (typeof r.description === 'string' ? r.description : '') ||
+      (typeof r.content === 'string' ? r.content : '') ||
+      (typeof r.text === 'string' ? r.text : '');
 
     if (!title && !snippet) continue;
     out.push({ title, snippet, url });

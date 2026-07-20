@@ -33,6 +33,42 @@ describe('parseWebSearchResults', () => {
     });
   });
 
+  it('parses the You.com v1 shape where results is an object of sub-arrays', () => {
+    const body = {
+      metadata: { latency: 12 },
+      results: {
+        web: [
+          { title: 'Monte Bello', url: 'https://example.com/mb', snippets: ['A Cabernet from Ridge.'] },
+          { title: 'Review', url: 'https://example.com/r', description: 'Age-worthy.' },
+        ],
+        news: [],
+      },
+    };
+    const out = parseWebSearchResults(body, 5);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toEqual({
+      title: 'Monte Bello',
+      url: 'https://example.com/mb',
+      snippet: 'A Cabernet from Ridge.',
+    });
+    expect(out[1]!.snippet).toBe('Age-worthy.');
+  });
+
+  it('falls back to the first array under a results object when no known bucket exists', () => {
+    const body = { results: { somethingNew: [{ title: 'T', url: 'https://x', snippet: 's' }] } };
+    const out = parseWebSearchResults(body, 5);
+    expect(out).toEqual([{ title: 'T', url: 'https://x', snippet: 's' }]);
+  });
+
+  it('extracts snippet from passages/content/text fallbacks', () => {
+    expect(
+      parseWebSearchResults({ results: [{ title: 'a', url: 'u', passages: ['p1', 'p2'] }] }, 5)[0]!.snippet,
+    ).toBe('p1 p2');
+    expect(
+      parseWebSearchResults({ results: [{ title: 'a', url: 'u', content: 'c' }] }, 5)[0]!.snippet,
+    ).toBe('c');
+  });
+
   it('parses the alternate "hits" container with a single "snippet" string', () => {
     const body = {
       hits: [{ title: 'T', url: 'https://x', snippet: 'one passage' }],
