@@ -53,6 +53,21 @@ export const config = {
   geminiApiKey: optional('GEMINI_API_KEY'),
   openaiApiKey: optional('OPENAI_API_KEY'),
 
+  // ---- Scan Web Enrichment ----
+  // Provider-neutral web search used to ground reverse-scan cards. When the
+  // key is unset, enrichment is disabled and scans behave exactly as before.
+  // Default endpoint targets the You.com Web Search API.
+  webSearchApiKey: optional('WEB_SEARCH_API_KEY'),
+  webSearchEndpoint: optional('WEB_SEARCH_ENDPOINT', 'https://ydc-index.io/v1/search'),
+  scanEnrich: {
+    // Number of retrieved results fed to the synthesis step.
+    maxResults: Number(optional('SCAN_ENRICH_MAX_RESULTS', '5')),
+    // Time bound for the whole enrichment pass (search + synthesis).
+    timeoutMs: Number(optional('SCAN_ENRICH_TIMEOUT_MS', '9000')),
+    // Backstop on web-search calls per rolling 60s window across the process.
+    callsPerMin: Number(optional('SCAN_ENRICH_CALLS_PER_MIN', '30')),
+  },
+
   // Model IDs, overridable via env so you can bump versions without code
   // changes. Defaults verified current as of this build.
   models: {

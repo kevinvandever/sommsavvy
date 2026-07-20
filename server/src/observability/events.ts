@@ -4,6 +4,7 @@
 export const SCAN_STARTED = 'scan_started';
 export const SCAN_SUCCEEDED = 'scan_succeeded';
 export const SCAN_FAILED = 'scan_failed';
+export const SCAN_ENRICHED = 'scan_enriched';
 export const CELLAR_SAVED = 'cellar_saved';
 export const SIGNED_UP = 'signed_up';
 
