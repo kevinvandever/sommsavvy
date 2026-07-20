@@ -27,6 +27,7 @@ export function Result() {
 
   const setRouting = useStore((s) => s.setRouting);
   const setResult = useStore((s) => s.setResult);
+  const clearScan = useStore((s) => s.clearScan);
   const depth = useStore((s) => s.depth);
 
   const [authOpen, setAuthOpen] = useState(false);
@@ -138,13 +139,14 @@ export function Result() {
   const handleStreamError = useCallback(
     (err: { message: string; code?: string }) => {
       if (err.code === 'CONTEXT_EXPIRED') {
-        navigate('/?recapture=1');
+        clearScan();
+        navigate('/?notice=capture-again');
         return;
       }
       setStreamError('Something went sideways. Try scanning again.');
       setOverriding(false);
     },
-    [navigate],
+    [navigate, clearScan],
   );
 
   // Override: re-call smartScan with forceMode using the current session.
@@ -152,7 +154,8 @@ export function Result() {
     async (target: 'identify' | 'pair') => {
       // No session context available — navigate to Home with a notice.
       if (!session?.imageUrl && !session?.text) {
-        navigate('/?recapture=1');
+        clearScan();
+        navigate('/?notice=capture-again');
         return;
       }
 
@@ -180,7 +183,7 @@ export function Result() {
         setOverriding(false);
       }
     },
-    [session, depth, setRouting, setResult, handleStreamError, navigate],
+    [session, depth, setRouting, setResult, clearScan, handleStreamError, navigate],
   );
 
   return (
@@ -196,7 +199,7 @@ export function Result() {
           animate={{ opacity: 1 }}
           transition={{ duration: DUR.std, ease: EASE.standard }}
         >
-          <button className="result__back btn-tertiary" onClick={() => navigate('/')}>
+          <button className="result__back btn-tertiary" onClick={() => { clearScan(); navigate('/'); }}>
             <IconArrowLeft size={16} stroke={1.6} /> Back to camera
           </button>
 
@@ -294,7 +297,7 @@ export function Result() {
             </div>
           )}
 
-          <button className="btn-tertiary result__try-again" onClick={() => navigate('/')}>
+          <button className="btn-tertiary result__try-again" onClick={() => { clearScan(); navigate('/'); }}>
             <IconRefresh size={18} stroke={1.6} /> Try again
           </button>
         </motion.main>
