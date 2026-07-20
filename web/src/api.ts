@@ -110,6 +110,17 @@ export const api = {
     return rpc('/listCellar', input);
   },
 
+  // Natural-language search over the user's own cellar. Returns a ranked
+  // subset with a short reason per entry, or a keyword-filtered set when the
+  // backend falls back (usedFallback: true).
+  searchCellar(input: {
+    query: string;
+    kind?: Kind;
+    owned?: boolean;
+  }): Promise<{ matches: Array<{ entry: CellarEntry; reason: string }>; usedFallback: boolean }> {
+    return rpc('/searchCellar', input);
+  },
+
   getEntry(input: { id: string }): Promise<{ entry: CellarEntry }> {
     return rpc('/getEntry', input);
   },

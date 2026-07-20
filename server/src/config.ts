@@ -98,6 +98,17 @@ export const config = {
   anonDailyCallLimit: Number(optional('ANON_DAILY_CALL_LIMIT', '0')),
   pocketSommImageCount: Number(optional('POCKET_SOMM_IMAGE_COUNT', '1')),
 
+  // ---- Cellar Search ----
+  // Natural-language interpretation of the cellar search query. Falls back to
+  // the substring keyword filter on timeout, error, or when no AI text
+  // provider is configured, so search never regresses.
+  cellarSearch: {
+    // Time bound for the interpretation step before falling back to keyword.
+    timeoutMs: Number(optional('CELLAR_SEARCH_TIMEOUT_MS', '6000')),
+    // Cap on entries sent to the model; oversized cellars truncate to most recent.
+    maxCandidates: Number(optional('CELLAR_SEARCH_MAX_CANDIDATES', '120')),
+  },
+
   get isProd(): boolean {
     return process.env.NODE_ENV === 'production';
   },

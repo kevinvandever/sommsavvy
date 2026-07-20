@@ -11,6 +11,9 @@ interface Props {
   // tile would be dotted, which is noise. The filter context already says
   // these are all owned.
   hideOwnedDot?: boolean;
+  // When a natural-language search surfaced this tile, a short reason it fit
+  // the query. Shown as a quiet caption in the tile body.
+  reason?: string;
 }
 
 // Curated chiaroscuro stand-ins for entries that arrived without an
@@ -32,7 +35,7 @@ function placeholderFor(id: string): string {
 }
 
 // A single cellar tile in the asymmetric mosaic.
-export function CellarTile({ entry, featured, hideOwnedDot }: Props) {
+export function CellarTile({ entry, featured, hideOwnedDot, reason }: Props) {
   const [, navigate] = useLocation();
   const isNew = Date.now() - entry.savedAt < 7 * 24 * 60 * 60 * 1000;
   const photoSrc = entry.photoUrl || placeholderFor(entry.id);
@@ -94,6 +97,7 @@ export function CellarTile({ entry, featured, hideOwnedDot }: Props) {
             {[entry.producer, entry.vintage].filter(Boolean).join(' · ')}
           </p>
         )}
+        {reason && <p className="tile__reason">{reason}</p>}
       </div>
 
       <style>{`
@@ -196,6 +200,11 @@ export function CellarTile({ entry, featured, hideOwnedDot }: Props) {
         }
         .tile__meta {
           margin-top: 4px;
+        }
+        .tile__reason {
+          margin-top: 8px;
+          font: italic 13px/1.35 var(--font-rowan);
+          color: color-mix(in oklch, var(--ember) 70%, var(--bone));
         }
       `}</style>
     </motion.article>
