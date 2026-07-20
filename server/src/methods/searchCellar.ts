@@ -97,7 +97,9 @@ async function interpret(query: string, candidates: Entry[], userId: string): Pr
   if (me?.tasteSummary) tasteSummary = me.tasteSummary;
 
   // Compact projection: only the fields interpretation needs. This is the only
-  // cellar data sent to the model.
+  // cellar data sent to the model. `owned` tells the model which bottles the
+  // user physically holds right now (true) versus ones they have tasted or
+  // noted but no longer have (false).
   const projection = candidates.map((e) => ({
     id: e.id,
     name: e.name,
@@ -109,9 +111,10 @@ async function interpret(query: string, candidates: Entry[], userId: string): Pr
     pairings: e.pairings ?? [],
     whyText: e.whyText ?? null,
     notes: e.notes ?? null,
+    owned: e.owned === true,
   }));
 
-  const prompt = `You are SommSavvy, a pocket sommelier helping someone find something from the bottles they ALREADY OWN. Below is the user's request and a list of their saved cellar entries.
+  const prompt = `You are SommSavvy, a pocket sommelier helping someone choose from their cellar. The cellar is a journal of everything they have saved: some bottles they physically have on hand right now ("owned": true), others they have tasted or noted but do not currently hold ("owned": false).
 
 ${VOICE_RULES}
 
@@ -122,14 +125,15 @@ ${tasteSummary ? `User's taste profile (light context only, do not override the 
 The user's request:
 "${query}"
 
-Their cellar (each entry has an id):
+Their cellar (each entry has an id and an "owned" flag):
 ${JSON.stringify(projection)}
 
 Instructions:
 - Select the entries that genuinely fit the request. Consider kind, region, style, the editorial "whyText", the pairings, the occasion, and the user's own "notes".
+- When the request is about drinking now or a specific occasion, prefer entries the user has on hand ("owned": true), but still include a clearly strong match even if they do not currently own it.
 - Rank the best fits first.
 - Return ONLY entries that actually fit. If nothing fits, return an empty list. Do not force a stretch.
-- For each selected entry, write "reason": one short sentence, in the depth-appropriate voice, on why it fits this request.
+- For each selected entry, write "reason": one short sentence, in the depth-appropriate voice, on why it fits this request. Do NOT state whether they own it or where to buy it; the app shows availability separately.
 - Select ONLY from the ids provided. Never invent an id or a bottle.
 - NEVER include a numeric rating or score.
 

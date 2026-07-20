@@ -84,3 +84,15 @@ This is a first, concrete slice of the Cellar Intelligence lane on the roadmap. 
 2. WHEN a Result_Set is displayed, THE Cellar SHALL present the matching entries in the existing mosaic layout.
 3. WHILE a Search_Query is being interpreted, THE Cellar SHALL show a non-blocking progress indication consistent with the existing loading treatment.
 4. THE Filter_Chips SHALL continue to function as they do today and SHALL compose with the Search_Query per Requirement 2.3.
+
+### Requirement 6: Make ownership legible in results
+
+**User Story:** As an enthusiast asking what to pour for an occasion, I want to see which suggestions I can open right now versus ones I would need to acquire, so that a whole-cellar search stays useful without hiding bottles I no longer hold.
+
+#### Acceptance Criteria
+
+1. WHEN a Search_Query is interpreted over the whole cellar (the "In the Rack" filter is not active), THE Cellar_Search SHALL consider each entry's ownership (`owned`) and, for requests about drinking now or a specific occasion, SHALL prefer entries the user has on hand while still surfacing a clearly strong match the user does not currently own.
+2. WHEN a Result_Set is displayed for a whole-cellar Search_Query, THE Cellar SHALL show, for each Match_Result, whether the bottle is on hand or not, using a clear per-entry availability indicator.
+3. WHEN the "In the Rack" filter is active, THE Cellar_Search SHALL restrict results to owned entries (a hard filter) and THE Cellar SHALL suppress the per-entry availability indicator as redundant.
+4. THE availability indicator and the ownership preference SHALL be derived from the `owned` axis only and SHALL NOT alter the `tasted` axis or the taste profile.
+5. THE reason text on a Match_Result SHALL describe fit only and SHALL NOT assert ownership or purchase guidance; availability is conveyed by the indicator, not the reason.

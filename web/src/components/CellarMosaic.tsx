@@ -10,13 +10,18 @@ interface Props {
   // When a natural-language search is active, a short reason per entry
   // explaining why it fit the query, keyed by entry id.
   reasons?: Record<string, string>;
+  // Show a per-tile availability tag (in your rack / not on hand). Used during
+  // an "All" or kind-filtered search so the user can see what they can open
+  // now versus what they would need to grab. Suppressed in rack-only search
+  // where every result is owned.
+  showAvailability?: boolean;
 }
 
 // Asymmetric mosaic. We feature *judiciously* — too many wide tiles makes
 // the grid feel chaotic. Logic: a featured tile is a 5-star entry that's
 // also recent, OR every-Nth entry to give the eye a rhythm. Caps at ~25%
 // featured so most of the grid stays standard.
-export function CellarMosaic({ entries, hideOwnedDots, reasons }: Props) {
+export function CellarMosaic({ entries, hideOwnedDots, reasons, showAvailability }: Props) {
   const week = 7 * 24 * 60 * 60 * 1000;
 
   // Pick the featured set up front so the visual rhythm is intentional.
@@ -44,6 +49,7 @@ export function CellarMosaic({ entries, hideOwnedDots, reasons }: Props) {
             featured={featuredIds.has(entry.id)}
             hideOwnedDot={hideOwnedDots}
             reason={reasons?.[entry.id]}
+            showAvailability={showAvailability}
           />
         ))}
       </AnimatePresence>
