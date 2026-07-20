@@ -62,35 +62,55 @@ if ! echo "$BODY" | jq -e . >/dev/null 2>&1; then
   exit 1
 fi
 
+# jq filter that finds the result array wherever the provider puts it, mirroring
+# extractRawList in server/src/ai/webSearch.ts: a top-level results/hits array,
+# or a results OBJECT of sub-arrays (You.com v1 -> results.web), else the first
+# array one level down.
+RESULT_LIST='
+  if (.results | type) == "array" then .results
+  elif (.hits | type) == "array" then .hits
+  elif (.results | type) == "object" then
+    ( .results.web // .results.news // .results.results // .results.items // .results.hits
+      // ( [ .results[] | select(type == "array") ][0] ) // [] )
+  else [] end'
+
 echo "-- top-level keys --"
 echo "$BODY" | jq -r 'keys[]'
 echo
 
-echo "-- result container + count --"
+echo "-- .results shape --"
 echo "$BODY" | jq -r '
-  if (.results | type == "array") then "results: \(.results | length)"
-  elif (.hits | type == "array") then "hits: \(.hits | length)"
-  else "no results/hits array found at top level" end'
+  if (.results | type) == "object" then
+    ( .results | to_entries
+      | map("  results.\(.key): \(.value|type)\(if (.value|type)=="array" then " [\(.value|length)]" else "" end)")
+      | .[] )
+  elif (.results | type) == "array" then "  results: array [\(.results|length)]"
+  else "  results: \(.results|type)" end'
+echo
+
+echo "-- resolved result count (via extractRawList logic) --"
+echo "$BODY" | jq -r "($RESULT_LIST) | length"
 echo
 
 echo "-- first result keys (what fields the provider returns) --"
-echo "$BODY" | jq -r '(.results // .hits // [])[0] // {} | keys[]'
+echo "$BODY" | jq -r "(($RESULT_LIST)[0] // {}) | keys[]"
 echo
 
 echo "-- what our parser would extract (title / url / snippet), first 3 --"
-echo "$BODY" | jq '
-  [ (.results // .hits // [])[0:3][] | {
-      title: (.title // ""),
-      url: (.url // ""),
+echo "$BODY" | jq "
+  [ ($RESULT_LIST)[0:3][] | {
+      title: (.title // \"\"),
+      url: (.url // \"\"),
       snippet: (
-        if (.snippets | type == "array") then (.snippets | join(" "))
-        elif (.snippet | type == "string") then .snippet
-        elif (.description | type == "string") then .description
-        else "" end
+        if (.snippets | type == \"array\") then (.snippets | join(\" \"))
+        elif (.snippet | type == \"string\") then .snippet
+        elif (.description | type == \"string\") then .description
+        else \"\" end
       )
-    } ]'
+    } ]"
 echo
 
 echo "== DONE =="
-echo "If the container is not results/hits, or snippets are empty above, tell"
-echo "me and I will adjust parseWebSearchResults to match the real shape."
+echo "If the resolved count is > 0 and snippets are populated above, the parser"
+echo "matches and enrichment will work. If snippets are empty, paste the 'first"
+echo "result keys' list and I will map the right field."
