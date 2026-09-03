@@ -4,7 +4,7 @@
 
 **North-star:** The engaged enthusiast keeps adding tasted bottles to their cellar, so the taste profile sharpens and every recommendation feels more like theirs. Growth of tasted cellar entries per active user is the signal the product is working.
 
-**Last updated:** July 2026 · **Currently building:** nothing in flight — Smart Scan, Scan Web Enrichment, and Cellar Search all shipped. Next up: Taste Seeding.
+**Last updated:** July 2026 · **Currently building:** nothing in flight. Next up: Tasted vs Owned (surface the two axes). Note: Taste Seeding is already live (ported from Remy), not pending.
 
 ---
 
@@ -40,18 +40,17 @@
 - **v1 scope:** image documents only (the vision capability accepts images, not PDF). PDF (needs a render-to-image step) and inbound email forwarding are noted follow-ups.
 - **Spec:** `.kiro/specs/cellar-bulk-import`.
 
+### Taste Seeding — *ported from Remy*
+- **What:** an optional "tell me about your taste" note on the third welcome slide (and editable forever from Profile) that warm-starts the taste profile before the cellar is deep. Stored as `users.tasteSeed`, blended into the taste summary alongside tasted cellar entries, survives the anonymous → signed-in handoff.
+- **Status:** already live in the Kiro build (`updateProfile` + `regenerateTasteSummaryInternal` on the backend; `Welcome.tsx`, `App.tsx`, `Profile.tsx` on the frontend). Carried over from the Remy app rather than rebuilt this migration.
+- **Unblocked:** a warm profile from day one; feeds Cellar Intelligence.
+
 ---
 
 ## Next
 *Sequenced from the Living Cellar lane, the taste flywheel first.*
 
-### Taste Seeding — `up next`
-- **What:** warm up a new user's taste profile fast so recommendations feel personal before the cellar is deep.
-- **Depends on:** Smart Scan (more entries), MVP taste profile.
-- **Unblocks:** Cellar Intelligence.
-- **Why it matters:** the profile is the differentiator; the sooner it is warm, the sooner retention.
-
-### Tasted vs Owned (surface the two axes)
+### Tasted vs Owned (surface the two axes) — `up next`
 - **What:** make the tasted/owned distinction first-class in the UI (filters, toggles).
 - **Depends on:** Smart Scan (sets tasted on capture).
 - **Unblocks:** inventory features (drinking windows, home bar).
@@ -59,7 +58,7 @@
 
 ### Cellar Intelligence (deeper)
 - **What:** the standing-insight layer beyond on-demand search — passive patterns and gentle nudges drawn from the cellar (leanings, gaps, "you keep coming back to structured Rhône reds," "your whites are thin," time-of-year prompts).
-- **Depends on:** Taste Seeding, a growing tasted cellar. Builds on the reasoning-over-a-projection pattern proven by Cellar Search (shipped).
+- **Depends on:** a growing tasted cellar (Taste Seeding, already live, gives it a warm start). Builds on the reasoning-over-a-projection pattern proven by Cellar Search (shipped).
 - **Unblocks:** Opening Notes, Drinking Windows, Year in Review.
 
 ---
