@@ -27,6 +27,12 @@
 - **Unblocked:** proves the reasoning-over-a-projection pattern the rest of the Cellar Intelligence lane builds on.
 - **Spec:** `.kiro/specs/cellar-search` (PRs #5, #8).
 
+### Scan Photo-First
+- **What:** when a user photographs a bottle, that photo becomes the cellar entry's image and no chiaroscuro portrait is generated. Generation is kept only for typed/spoken scans (no real photo to show). Cellar images now match the actual bottle.
+- **Why:** the generated portraits rarely matched the real bottle and were overriding the user's own photo, while costing an image call and a latency step on every photo scan.
+- **Unblocked:** accurate cellar imagery; removes the single largest per-scan image cost; one fewer provider round-trip on photo scans.
+- **Spec:** `.kiro/specs/scan-photo-first`.
+
 ### Cellar Bulk Import
 - **What:** photograph a wine club packing list (or invoice / shipment screenshot), have the app read the bottles off it, review and correct them, then add them all at once as **owned but untasted**. No portraits, no editorial cards at import time, and no taste regeneration (untasted entries do not shape the profile).
 - **Why:** entering a shipment one bottle at a time is where an engaged enthusiast stops bothering, and a stale cellar stops being useful.
