@@ -74,6 +74,13 @@ Bulk Import adds a document-extraction method, a bulk-save method, and an import
 - Voice rules apply to all copy: no exclamation points, no emoji, no em dashes; never a score.
 - Tasks marked `*` are optional tests and can be deferred.
 
+## Candidate follow-ups (deferred, not committed)
+
+Captured from usage discussion; build only if real use shows the need.
+
+- **Easy "mark tasted" on owned/imported entries.** Imported bottles land owned/untasted and only shape the taste profile once opened and marked tasted. If flipping that on the entry detail page is not already one obvious tap, a clearer affordance would make the flywheel turn. Verify the current entry detail page first.
+- **"Exclude from taste profile" per-entry flag.** Raised because `tasted` currently does two jobs: "I have experienced this" (journal fact) and "let this shape my profile" (signal). They usually coincide, but occasionally a user tastes something they do not want influencing recommendations. Decision: do NOT build yet. The escape hatch today is simply not saving forgettable bottles (the user's own filter: "I only save it if it was worth remembering"), plus recency-weighted regen dilutes the odd off bottle. Revisit only if recommendations demonstrably drift because of bottles the user did not care about. A rating/affinity signal was considered and parked as it conflicts with the anti-rating-culture stance.
+
 ## Task Dependency Graph
 
 ```json
