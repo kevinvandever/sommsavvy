@@ -32,6 +32,17 @@ function getToken(): string | null {
   }
 }
 
+// One candidate drink read off an imported document, before the user reviews it.
+export interface ParsedItem {
+  name: string;
+  kind: Kind;
+  producer: string | null;
+  region: string | null;
+  vintage: number | null;
+  abv: number | null;
+  confidence: 'high' | 'medium' | 'low';
+}
+
 // ---------------------------------------------------------------------------
 // Sign-in signal error
 // ---------------------------------------------------------------------------
@@ -108,6 +119,32 @@ export const api = {
     sort?: 'recent' | 'tasted';
   }): Promise<{ entries: CellarEntry[] }> {
     return rpc('/listCellar', input);
+  },
+
+  // Reads a document listing multiple drinks and returns candidates to review.
+  // Writes nothing; saveCellarEntriesBulk commits the confirmed rows.
+  parseCellarDocument(input: {
+    imageUrl: string;
+  }): Promise<{ items: ParsedItem[]; truncated: boolean }> {
+    return rpc('/parseCellarDocument', input);
+  },
+
+  // Commits reviewed import rows as owned/untasted cellar entries. Partial
+  // success: valid rows save, invalid rows come back in `rejected`.
+  saveCellarEntriesBulk(input: {
+    entries: Array<{
+      name: string;
+      kind: Kind;
+      producer?: string;
+      region?: string;
+      vintage?: number;
+      abv?: number;
+    }>;
+  }): Promise<{
+    saved: CellarEntry[];
+    rejected: Array<{ index: number; reason: string }>;
+  }> {
+    return rpc('/saveCellarEntriesBulk', input);
   },
 
   // Natural-language search over the user's own cellar. Returns a ranked

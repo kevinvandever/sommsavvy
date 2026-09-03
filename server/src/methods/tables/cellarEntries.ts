@@ -10,7 +10,10 @@ export interface CellarEntry {
   vintage?: number;
   abv?: number;
   photoUrl?: string;
-  source: 'somm' | 'scan' | 'manual';
+  // 'import' marks rows created by bulk document import: AI-parsed, owned,
+  // and untasted. Distinct from 'manual' (hand-typed) so imported rows stay
+  // identifiable for later review.
+  source: 'somm' | 'scan' | 'manual' | 'import';
   notes?: string;
   // Editorial extras carried over from the AI return so the entry detail
   // page has rich context without a follow-up call.
