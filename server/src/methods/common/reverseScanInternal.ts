@@ -163,47 +163,57 @@ No prose, no markdown fences. Only the JSON object.`;
     const { imagePrompt: _earlyPrompt, ...earlyResult } = result;
     await defaultStream({ partialResult: earlyResult });
 
-    // --- Image allowance check ---
-    const ip = getContextIp();
-    const anonToken = getContextAnonToken();
-    const identity = resolveIdentity(auth.userId, anonToken, ip);
-    const counters = await getCounters(identity.primary, identity.ipKey);
-    const { allowed, notice } = computeImageAllowance(counters, identity.isSignedIn, 1);
+    // --- Entry image: photo-first ---
+    // When the user gave us a photo, that photo IS the entry image. A generated
+    // "portrait" almost never matches the real bottle, so using the capture is
+    // both more accurate and free (no generation call, no allowance consumed,
+    // no "Pouring..." step). Generation is kept only for no-photo (typed or
+    // spoken) scans, where there is no real image to show.
+    if (imageUrl) {
+      result.photoUrl = imageUrl;
+    } else {
+      // --- Image allowance check (only when we might generate) ---
+      const ip = getContextIp();
+      const anonToken = getContextAnonToken();
+      const identity = resolveIdentity(auth.userId, anonToken, ip);
+      const counters = await getCounters(identity.primary, identity.ipKey);
+      const { allowed, notice } = computeImageAllowance(counters, identity.isSignedIn, 1);
 
-    if (notice) {
-      result.notice = notice;
-    }
+      if (notice) {
+        result.notice = notice;
+      }
 
-    // Portrait generation — gated and non-fatal (Requirements 5.5, 5.6, 5.7):
-    // If the image allowance is exhausted (allowed === 0) or confidence is low,
-    // portrait generation is skipped entirely and the card is returned without
-    // photoUrl. If generation is attempted but the provider fails, the error is
-    // caught and the card remains complete and saveable without a portrait.
-    // In neither case is the image counter incremented (Property 6).
-    if (allowed > 0 && result.confidence !== 'low') {
-      await defaultStream({ status: 'Pouring...' });
-      try {
-        const portraitPrompt =
-          result.imagePrompt ||
-          `Editorial chiaroscuro portrait of a ${result.kind} bottle of ${result.producer ?? result.name}${result.vintage ? ' ' + result.vintage : ''}. Single subject in warm raking candlelight from upper left. Deep espresso black background, vignetting to pure black at edges. Shallow depth of field. Subtle film grain. Atmospheric, restrained, magazine editorial.`;
-        const { imageUrl: portrait } = await mindstudio.generateImage({
-          prompt: portraitPrompt,
-          imageModelOverride: {
-            config: {
-              aspect_ratio: '3:4',
+      // Portrait generation — gated and non-fatal (Requirements 5.5, 5.6, 5.7):
+      // If the image allowance is exhausted (allowed === 0) or confidence is low,
+      // portrait generation is skipped entirely and the card is returned without
+      // photoUrl. If generation is attempted but the provider fails, the error is
+      // caught and the card remains complete and saveable without a portrait.
+      // In neither case is the image counter incremented (Property 6).
+      if (decideEntryImage({ hasPhoto: false, allowed, confidence: result.confidence }) === 'generate') {
+        await defaultStream({ status: 'Pouring...' });
+        try {
+          const portraitPrompt =
+            result.imagePrompt ||
+            `Editorial chiaroscuro portrait of a ${result.kind} bottle of ${result.producer ?? result.name}${result.vintage ? ' ' + result.vintage : ''}. Single subject in warm raking candlelight from upper left. Deep espresso black background, vignetting to pure black at edges. Shallow depth of field. Subtle film grain. Atmospheric, restrained, magazine editorial.`;
+          const { imageUrl: portrait } = await mindstudio.generateImage({
+            prompt: portraitPrompt,
+            imageModelOverride: {
+              config: {
+                aspect_ratio: '3:4',
+              },
             },
-          },
-        });
-        result.photoUrl = Array.isArray(portrait) ? portrait[0] : portrait;
+          });
+          result.photoUrl = Array.isArray(portrait) ? portrait[0] : portrait;
 
-        // Only increment on successful generation.
-        await incrementImageCount(identity.primary, identity.ipKey, 1);
-      } catch (err) {
-        // Provider failure is NON-FATAL (Requirement 5.5): the text card was already
-        // streamed above and will be returned without photoUrl. The save action
-        // remains available (Requirement 5.6). Image counter is NOT incremented
-        // (Property 6) since no image was successfully produced.
-        console.error('Bottle portrait failed (non-fatal):', err);
+          // Only increment on successful generation.
+          await incrementImageCount(identity.primary, identity.ipKey, 1);
+        } catch (err) {
+          // Provider failure is NON-FATAL (Requirement 5.5): the text card was already
+          // streamed above and will be returned without photoUrl. The save action
+          // remains available (Requirement 5.6). Image counter is NOT incremented
+          // (Property 6) since no image was successfully produced.
+          console.error('Bottle portrait failed (non-fatal):', err);
+        }
       }
     }
 
@@ -239,6 +249,22 @@ function parseJsonLoosely<T>(raw: string): T {
     return JSON.parse(braceMatch[0]) as T;
   }
   throw new Error('Could not parse model output as JSON');
+}
+
+/**
+ * Decide the entry image for a scan. Photo-first: a user photo always wins and
+ * is used as-is (no generation, no allowance). Only a no-photo scan can reach
+ * generation, and only when there is allowance and the identification is not
+ * low-confidence. Pure and exported for tests.
+ */
+export function decideEntryImage(args: {
+  hasPhoto: boolean;
+  allowed: number;
+  confidence: 'high' | 'medium' | 'low';
+}): 'use_photo' | 'generate' | 'none' {
+  if (args.hasPhoto) return 'use_photo';
+  if (args.allowed > 0 && args.confidence !== 'low') return 'generate';
+  return 'none';
 }
 
 // ---------------------------------------------------------------------------
