@@ -15,6 +15,8 @@ import { getMe } from './getMe';
 import { updateProfile } from './updateProfile';
 import { regenerateTasteSummary } from './regenerateTasteSummary';
 import { searchCellar } from './searchCellar';
+import { parseCellarDocument } from './parseCellarDocument';
+import { saveCellarEntriesBulk } from './saveCellarEntriesBulk';
 import { pocketSomm } from './pocketSomm';
 import { reverseScan } from './reverseScan';
 import { smartScan } from './smartScan';
@@ -52,6 +54,8 @@ function post<I extends object, O>(path: string, fn: (input: I) => Promise<O>): 
 post('/saveCellarEntry', saveCellarEntry);
 post('/listCellar', listCellar);
 post('/searchCellar', searchCellar);
+post('/parseCellarDocument', parseCellarDocument);
+post('/saveCellarEntriesBulk', saveCellarEntriesBulk);
 post('/getEntry', getEntry);
 post('/updateCellarEntry', updateCellarEntry);
 post('/removeCellarEntry', removeCellarEntry);

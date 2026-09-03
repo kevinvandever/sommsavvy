@@ -2,7 +2,7 @@
 
 export type Depth = 'beginner' | 'enthusiast' | 'expert';
 export type Kind = 'wine' | 'beer' | 'spirits';
-export type Source = 'somm' | 'scan' | 'manual';
+export type Source = 'somm' | 'scan' | 'manual' | 'import';
 
 export interface User {
   id: string;

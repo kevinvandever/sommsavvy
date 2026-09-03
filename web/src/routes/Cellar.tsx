@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'motion/react';
-import { IconArrowLeft, IconSearch } from '@tabler/icons-react';
+import { IconArrowLeft, IconSearch, IconFileImport } from '@tabler/icons-react';
 import { Header } from '../components/Header';
 import { Atmosphere } from '../components/Atmosphere';
 import { CellarMosaic } from '../components/CellarMosaic';
 import { AuthSheet } from '../components/AuthSheet';
+import { ImportSheet } from '../components/ImportSheet';
 import { useStore } from '../store';
 import { api } from '../api';
 import { img } from '../lib/cdn';
@@ -114,6 +115,7 @@ export function Cellar() {
   const [filter, setFilter] = useState<typeof FILTERS[number]['id']>('all');
   const [search, setSearch] = useState('');
   const [authOpen, setAuthOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // Once auth state has settled, anonymous users get the sign-in sheet
   // automatically. We don't open it before then to avoid a flash for users
@@ -244,7 +246,12 @@ export function Cellar() {
 
           {booted && user && cellar.length > 0 && (
             <>
-              <h1 className="t-headline cellar__title">Your cellar</h1>
+              <div className="cellar__head">
+                <h1 className="t-headline cellar__title">Your cellar</h1>
+                <button className="btn-tertiary cellar__import" onClick={() => setImportOpen(true)}>
+                  <IconFileImport size={16} stroke={1.6} /> Add a shipment
+                </button>
+              </div>
 
               <div className="cellar__chips">
                 {FILTERS.map((f) => (
@@ -331,6 +338,8 @@ export function Cellar() {
           )}
         </motion.main>
 
+        <ImportSheet open={importOpen} onClose={() => setImportOpen(false)} />
+
         <AnimatePresence>
           {authOpen && (
             <AuthSheet
@@ -355,7 +364,21 @@ export function Cellar() {
         }
         @media (min-width: 760px) { .cellar { padding: 16px 32px 80px; } }
         .cellar__back { padding-left: 0; margin-bottom: 8px; }
-        .cellar__title { margin-bottom: 20px; }
+        .cellar__title { margin-bottom: 0; }
+        .cellar__head {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          margin-bottom: 20px;
+        }
+        .cellar__import {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          flex: 0 0 auto;
+        }
         .cellar__chips {
           display: flex;
           flex-wrap: wrap;

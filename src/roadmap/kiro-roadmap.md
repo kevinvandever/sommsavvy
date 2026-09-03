@@ -27,6 +27,13 @@
 - **Unblocked:** proves the reasoning-over-a-projection pattern the rest of the Cellar Intelligence lane builds on.
 - **Spec:** `.kiro/specs/cellar-search` (PRs #5, #8).
 
+### Cellar Bulk Import
+- **What:** photograph a wine club packing list (or invoice / shipment screenshot), have the app read the bottles off it, review and correct them, then add them all at once as **owned but untasted**. No portraits, no editorial cards at import time, and no taste regeneration (untasted entries do not shape the profile).
+- **Why:** entering a shipment one bottle at a time is where an engaged enthusiast stops bothering, and a stale cellar stops being useful.
+- **Unblocked:** low-effort rack upkeep, which makes the `owned` axis trustworthy; a natural companion to Tasted vs Owned.
+- **v1 scope:** image documents only (the vision capability accepts images, not PDF). PDF (needs a render-to-image step) and inbound email forwarding are noted follow-ups.
+- **Spec:** `.kiro/specs/cellar-bulk-import`.
+
 ---
 
 ## Next

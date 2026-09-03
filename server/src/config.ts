@@ -98,6 +98,12 @@ export const config = {
   anonDailyCallLimit: Number(optional('ANON_DAILY_CALL_LIMIT', '0')),
   pocketSommImageCount: Number(optional('POCKET_SOMM_IMAGE_COUNT', '1')),
 
+  // ---- Cellar Bulk Import ----
+  // Reading a shipment document (packing slip, invoice, screenshot) into
+  // multiple owned/untasted cellar entries.
+  importBatchLimit: Number(optional('IMPORT_BATCH_LIMIT', '50')),
+  importParseTimeoutMs: Number(optional('IMPORT_PARSE_TIMEOUT_MS', '30000')),
+
   // ---- Cellar Search ----
   // Natural-language interpretation of the cellar search query. Falls back to
   // the substring keyword filter on timeout, error, or when no AI text

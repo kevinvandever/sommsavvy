@@ -6,6 +6,7 @@ export const SCAN_SUCCEEDED = 'scan_succeeded';
 export const SCAN_FAILED = 'scan_failed';
 export const SCAN_ENRICHED = 'scan_enriched';
 export const CELLAR_SAVED = 'cellar_saved';
+export const CELLAR_IMPORTED = 'cellar_imported';
 export const SIGNED_UP = 'signed_up';
 
 export function logEvent(event: string, data: Record<string, unknown>): void {
