@@ -74,6 +74,13 @@ Bulk Import adds a document-extraction method, a bulk-save method, and an import
 - Voice rules apply to all copy: no exclamation points, no emoji, no em dashes; never a score.
 - Tasks marked `*` are optional tests and can be deferred.
 
+## Post-launch refinements (shipped)
+
+First real use showed imported entries were too thin: every tile fell back to the same stock coupe placeholder, and opening one gave no wine detail at all. Two fixes shipped:
+
+- **Kind-tinted stand-in.** Entries without a photo now render a designed placeholder (kind-tinted gradient plus the bottle's initial) instead of a shared stock photo, so a mixed rack reads as varied and deliberate. Also removes the dependency on the old MindStudio CDN images. Chose a designed placeholder over per-kind stock photos because no real per-kind assets exist to source, and over per-bottle generation because that reintroduces the cost and mismatch problems photo-first just removed.
+- **Fire-on-open enrichment.** `enrichCellarEntry` fills in the editorial context (what to expect, pairings, occasion, value) for any entry lacking it, the first time that entry is opened, then caches it. Chosen over a "tell me about this one" button so imported and scanned entries converge instead of behaving differently. Idempotent (no call when context already exists), non-fatal, and **never rewrites identity**, which also keeps it clear of the taste-regen trigger. Cost is bounded by entries actually opened, not bottles imported.
+
 ## Candidate follow-ups (deferred, not committed)
 
 Captured from usage discussion; build only if real use shows the need.
