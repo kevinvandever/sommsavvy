@@ -162,6 +162,16 @@ export const api = {
     return rpc('/getEntry', input);
   },
 
+  // Fills in editorial context (what to expect, pairings, occasion, value) for
+  // an entry that has none yet — typically a bulk-imported bottle. Idempotent
+  // and cheap: returns the entry untouched with enriched:false if it already
+  // has context. Never rewrites the identity the user confirmed.
+  enrichCellarEntry(input: {
+    id: string;
+  }): Promise<{ entry: CellarEntry; enriched: boolean }> {
+    return rpc('/enrichCellarEntry', input);
+  },
+
   updateCellarEntry(input: {
     id: string;
     patch: Partial<CellarEntry>;

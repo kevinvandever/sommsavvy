@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { motion } from 'motion/react';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -25,6 +25,11 @@ export function EntryDetail() {
   const [entry, setEntry] = useState<CellarEntry | undefined>(cellar.find((e) => e.id === id));
   const [notes, setNotes] = useState(entry?.notes || '');
   const [confirmRemove, setConfirmRemove] = useState(false);
+  // Imported bottles arrive as identity only. The first time one is opened we
+  // fill in its editorial context so it reads like a scanned entry. Cached on
+  // the entry afterwards, so this runs once per bottle, not on every view.
+  const [enriching, setEnriching] = useState(false);
+  const enrichAttempted = useRef<string | null>(null);
 
   useEffect(() => {
     // Ensure we have the entry; load from server if not in cache.
@@ -38,6 +43,33 @@ export function EntryDetail() {
         .catch(() => navigate('/cellar'));
     }
   }, [id, entry, navigate]);
+
+  // Fire-on-open enrichment. Only for entries with no editorial context yet,
+  // and only once per entry per visit. Failure is silent: the page still shows
+  // the identity and notes, and the next open will try again.
+  useEffect(() => {
+    if (!entry || !id) return;
+    if (entry.whyText?.trim()) return;
+    if (enrichAttempted.current === id) return;
+    enrichAttempted.current = id;
+
+    let cancelled = false;
+    setEnriching(true);
+    api
+      .enrichCellarEntry({ id })
+      .then(({ entry: updated, enriched }) => {
+        if (cancelled || !enriched) return;
+        setEntry(updated);
+        patchEntry(updated.id, updated);
+      })
+      .catch((err) => console.error('Entry enrichment failed', err))
+      .finally(() => {
+        if (!cancelled) setEnriching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entry, id, patchEntry]);
 
   if (!entry) {
     return (
@@ -119,7 +151,7 @@ export function EntryDetail() {
                 <img src={img(entry.photoUrl, 1200) || entry.photoUrl} alt={entry.name} />
               </div>
             ) : (
-              <div className="edet__hero edet__hero--placeholder">
+              <div className={`edet__hero edet__hero--placeholder edet__hero--${entry.kind}`}>
                 <span className="t-aside edet__hero-letter">{entry.name.charAt(0).toUpperCase()}</span>
               </div>
             )}
@@ -153,13 +185,19 @@ export function EntryDetail() {
                 <Switch checked={owned} onChange={setOwned} ariaLabel="I have a bottle of this" />
               </div>
 
-              {entry.whyText && (
+              {entry.whyText ? (
                 <>
                   <div className="divider" />
                   <p className="t-label edet__sec">What we found</p>
                   <MonocleText text={entry.whyText} aside={entry.monocleAside} className="t-why" />
                 </>
-              )}
+              ) : enriching ? (
+                <>
+                  <div className="divider" />
+                  <p className="t-label edet__sec">What we found</p>
+                  <p className="t-body edet__reading">Reading up on this one</p>
+                </>
+              ) : null}
 
               <div className="divider" />
               <p className="t-label edet__sec">Your notes</p>
@@ -250,9 +288,31 @@ export function EntryDetail() {
         .edet__hero--placeholder {
           display: grid;
           place-items: center;
+        }
+        /* Tinted by kind, matching the cellar tile stand-in. */
+        .edet__hero--wine {
           background:
-            radial-gradient(ellipse 60% 70% at 50% 80%, color-mix(in oklch, var(--ember) 12%, transparent) 0%, transparent 60%),
-            color-mix(in oklch, var(--midnight) 70%, var(--smoke));
+            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bordeaux) 42%, transparent) 0%, transparent 70%),
+            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bordeaux) 22%, var(--midnight)) 0%, var(--midnight) 100%);
+        }
+        .edet__hero--beer {
+          background:
+            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--ember) 38%, transparent) 0%, transparent 70%),
+            linear-gradient(160deg in oklch, color-mix(in oklch, var(--ember) 18%, var(--midnight)) 0%, var(--midnight) 100%);
+        }
+        .edet__hero--spirits {
+          background:
+            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bone) 22%, transparent) 0%, transparent 70%),
+            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bone) 10%, var(--midnight)) 0%, var(--midnight) 100%);
+        }
+        .edet__reading {
+          color: color-mix(in oklch, var(--bone) 55%, transparent);
+          font-style: italic;
+          animation: edet-reading-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes edet-reading-pulse {
+          0%, 100% { opacity: 0.55; }
+          50%      { opacity: 1; }
         }
         .edet__hero-letter { font-size: 96px; color: color-mix(in oklch, var(--bone) 50%, transparent); font-style: italic; }
         .edet__body { padding: 28px; }

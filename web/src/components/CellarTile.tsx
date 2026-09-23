@@ -19,29 +19,16 @@ interface Props {
   showAvailability?: boolean;
 }
 
-// Curated chiaroscuro stand-ins for entries that arrived without an
-// AI-generated photo. Picked deterministically by entry id so the same row
-// always renders with the same companion photo (and the mosaic doesn't
-// shuffle on re-render).
-const PLACEHOLDER_POOL = [
-  'https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/b8d7fb5e-6956-4c45-90e7-673e65290427.png',
-  'https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/2a7fc506-ecc5-4c2b-bc40-f8ac223b8696.png',
-  'https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/b99cf7d2-b486-4210-a8de-c3705f414684.png',
-  'https://i.mscdn.ai/42da083b-07b3-4d8f-89c6-1c3ba8419e38/generated-images/0dcf0b20-68f9-48cb-85bc-a3c9469411de.png',
-];
-
-function placeholderFor(id: string): string {
-  // Stable hash from id → bucket index. Same entry always picks the same photo.
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
-  return PLACEHOLDER_POOL[Math.abs(h) % PLACEHOLDER_POOL.length];
-}
+// Entries without a photo (bulk-imported bottles, hand-typed ones) get a
+// designed placeholder rather than a stock photo of some other bottle: a
+// kind-tinted field with the bottle's initial. Tinting by kind means a rack of
+// imported wine, beer, and spirits reads as varied and deliberate instead of
+// four repeats of the same coupe. No external asset, so nothing to 404.
 
 // A single cellar tile in the asymmetric mosaic.
 export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailability }: Props) {
   const [, navigate] = useLocation();
   const isNew = Date.now() - entry.savedAt < 7 * 24 * 60 * 60 * 1000;
-  const photoSrc = entry.photoUrl || placeholderFor(entry.id);
   const usingPlaceholder = !entry.photoUrl;
   // The availability tag (search mode) already states ownership, so the photo
   // dot would be redundant there; show the dot only outside that case.
@@ -66,16 +53,17 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
       }}
     >
       <div className="tile__photo-wrap">
-        <img
-          src={img(photoSrc, featured ? 800 : 480) || photoSrc}
-          alt={entry.name}
-          className={`tile__photo ${usingPlaceholder ? 'tile__photo--placeholder' : ''}`}
-          loading="lazy"
-        />
-        {usingPlaceholder && (
-          <div className="tile__placeholder-overlay" aria-hidden="true">
-            <span className="tile__placeholder-letter">{entry.name.charAt(0).toUpperCase()}</span>
+        {usingPlaceholder ? (
+          <div className={`tile__stand-in tile__stand-in--${entry.kind}`} aria-hidden="true">
+            <span className="tile__stand-in-letter">{entry.name.charAt(0).toUpperCase()}</span>
           </div>
+        ) : (
+          <img
+            src={img(entry.photoUrl!, featured ? 800 : 480) || entry.photoUrl}
+            alt={entry.name}
+            className="tile__photo"
+            loading="lazy"
+          />
         )}
 
         {isNew && (
@@ -147,28 +135,36 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
           transform: scale(1.04);
           filter: saturate(1.05) brightness(1);
         }
-        .tile__photo--placeholder {
-          /* Push the chiaroscuro stand-in behind the letter overlay. */
-          filter: saturate(0.7) brightness(0.55) blur(0.5px);
-        }
-        .tile:hover .tile__photo--placeholder {
-          filter: saturate(0.85) brightness(0.7) blur(0px);
-        }
-        .tile__placeholder-overlay {
+        /* Designed stand-in for entries with no photo. Tinted by kind so a
+           mixed rack reads as varied rather than repeating one stock image. */
+        .tile__stand-in {
           position: absolute; inset: 0;
           display: grid; place-items: center;
-          pointer-events: none;
-          background: linear-gradient(180deg in oklch,
-            color-mix(in oklch, var(--midnight) 30%, transparent) 0%,
-            color-mix(in oklch, var(--midnight) 55%, transparent) 100%);
+          transition: filter 600ms var(--ease-standard);
         }
-        .tile__placeholder-letter {
+        .tile:hover .tile__stand-in { filter: brightness(1.12); }
+        .tile__stand-in--wine {
+          background:
+            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bordeaux) 42%, transparent) 0%, transparent 70%),
+            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bordeaux) 22%, var(--midnight)) 0%, var(--midnight) 100%);
+        }
+        .tile__stand-in--beer {
+          background:
+            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--ember) 38%, transparent) 0%, transparent 70%),
+            linear-gradient(160deg in oklch, color-mix(in oklch, var(--ember) 18%, var(--midnight)) 0%, var(--midnight) 100%);
+        }
+        .tile__stand-in--spirits {
+          background:
+            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bone) 22%, transparent) 0%, transparent 70%),
+            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bone) 10%, var(--midnight)) 0%, var(--midnight) 100%);
+        }
+        .tile__stand-in-letter {
           font-family: var(--font-rowan);
           font-style: italic;
           font-weight: 400;
           font-size: clamp(56px, 18vw, 96px);
-          color: color-mix(in oklch, var(--bone) 70%, transparent);
-          text-shadow: 0 4px 12px color-mix(in oklch, var(--midnight) 50%, transparent);
+          color: color-mix(in oklch, var(--bone) 62%, transparent);
+          text-shadow: 0 4px 16px color-mix(in oklch, var(--midnight) 60%, transparent);
           line-height: 1;
         }
         .tile__new {
