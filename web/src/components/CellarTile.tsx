@@ -1,5 +1,7 @@
 import { useLocation } from 'wouter';
+import { IconBottle } from '@tabler/icons-react';
 import { img } from '../lib/cdn';
+import { monogramFor } from '../lib/monogram';
 import type { CellarEntry } from '../types';
 import { motion } from 'motion/react';
 import { EASE, DUR } from '../lib/motion';
@@ -30,6 +32,7 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
   const [, navigate] = useLocation();
   const isNew = Date.now() - entry.savedAt < 7 * 24 * 60 * 60 * 1000;
   const usingPlaceholder = !entry.photoUrl;
+  const monogram = monogramFor(entry);
   // The availability tag (search mode) already states ownership, so the photo
   // dot would be redundant there; show the dot only outside that case.
   const showOwnedDot = entry.owned === true && !hideOwnedDot && !showAvailability;
@@ -55,7 +58,11 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
       <div className="tile__photo-wrap">
         {usingPlaceholder ? (
           <div className={`tile__stand-in tile__stand-in--${entry.kind}`} aria-hidden="true">
-            <span className="tile__stand-in-letter">{entry.name.charAt(0).toUpperCase()}</span>
+            {monogram ? (
+              <span className="tile__stand-in-letter">{monogram}</span>
+            ) : (
+              <IconBottle size={featured ? 64 : 48} stroke={1.2} className="tile__stand-in-glyph" />
+            )}
           </div>
         ) : (
           <img
@@ -157,6 +164,9 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
           background:
             radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bone) 22%, transparent) 0%, transparent 70%),
             linear-gradient(160deg in oklch, color-mix(in oklch, var(--bone) 10%, var(--midnight)) 0%, var(--midnight) 100%);
+        }
+        .tile__stand-in-glyph {
+          color: color-mix(in oklch, var(--bone) 40%, transparent);
         }
         .tile__stand-in-letter {
           font-family: var(--font-rowan);
