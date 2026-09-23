@@ -10,6 +10,7 @@ import { Switch } from '../components/Switch';
 import { useStore } from '../store';
 import { api } from '../api';
 import { img } from '../lib/cdn';
+import { monogramFor } from '../lib/monogram';
 import { EASE, DUR } from '../lib/motion';
 import type { CellarEntry } from '../types';
 
@@ -152,7 +153,11 @@ export function EntryDetail() {
               </div>
             ) : (
               <div className={`edet__hero edet__hero--placeholder edet__hero--${entry.kind}`}>
-                <span className="t-aside edet__hero-letter">{entry.name.charAt(0).toUpperCase()}</span>
+                {monogramFor(entry) ? (
+                  <span className="t-aside edet__hero-letter">{monogramFor(entry)}</span>
+                ) : (
+                  <IconBottle size={96} stroke={1.1} className="edet__hero-glyph" />
+                )}
               </div>
             )}
 
@@ -315,6 +320,7 @@ export function EntryDetail() {
           50%      { opacity: 1; }
         }
         .edet__hero-letter { font-size: 96px; color: color-mix(in oklch, var(--bone) 50%, transparent); font-style: italic; }
+        .edet__hero-glyph { color: color-mix(in oklch, var(--bone) 38%, transparent); }
         .edet__body { padding: 28px; }
         @media (min-width: 760px) { .edet__body { padding: 40px 48px; } }
         .edet__title { margin: 4px 0 6px; }
