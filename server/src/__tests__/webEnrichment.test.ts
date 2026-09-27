@@ -69,6 +69,36 @@ describe('parseWebSearchResults', () => {
     ).toBe('c');
   });
 
+  it('captures a thumbnail url when the provider supplies one', () => {
+    const body = {
+      results: {
+        web: [
+          {
+            title: 'Monte Bello',
+            url: 'https://x/mb',
+            snippets: ['A Cabernet.'],
+            thumbnail_url: 'https://img/thumb.jpg',
+            original_thumbnail_url: 'https://img/original.jpg',
+          },
+        ],
+      },
+    };
+    // thumbnail_url wins over original_thumbnail_url.
+    expect(parseWebSearchResults(body, 5)[0]!.thumbnailUrl).toBe('https://img/thumb.jpg');
+  });
+
+  it('falls back to original_thumbnail_url, and leaves it undefined when absent', () => {
+    expect(
+      parseWebSearchResults(
+        { results: [{ title: 'a', url: 'u', snippet: 's', original_thumbnail_url: 'https://img/o.jpg' }] },
+        5,
+      )[0]!.thumbnailUrl,
+    ).toBe('https://img/o.jpg');
+    expect(
+      parseWebSearchResults({ results: [{ title: 'a', url: 'u', snippet: 's' }] }, 5)[0]!.thumbnailUrl,
+    ).toBeUndefined();
+  });
+
   it('parses the alternate "hits" container with a single "snippet" string', () => {
     const body = {
       hits: [{ title: 'T', url: 'https://x', snippet: 'one passage' }],

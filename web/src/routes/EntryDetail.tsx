@@ -10,7 +10,6 @@ import { Switch } from '../components/Switch';
 import { useStore } from '../store';
 import { api } from '../api';
 import { img } from '../lib/cdn';
-import { monogramFor } from '../lib/monogram';
 import { EASE, DUR } from '../lib/motion';
 import type { CellarEntry } from '../types';
 
@@ -50,7 +49,9 @@ export function EntryDetail() {
   // the identity and notes, and the next open will try again.
   useEffect(() => {
     if (!entry || !id) return;
-    if (entry.whyText?.trim()) return;
+    // Fires when either the editorial text or the bottle image is missing, so
+    // entries enriched before images existed still pick one up.
+    if (entry.whyText?.trim() && entry.photoUrl?.trim()) return;
     if (enrichAttempted.current === id) return;
     enrichAttempted.current = id;
 
@@ -147,17 +148,11 @@ export function EntryDetail() {
           </button>
 
           <article className="edet__article">
-            {entry.photoUrl ? (
+            {/* No photo means no hero. A letter panel added nothing, so the
+                page simply opens on the text. */}
+            {entry.photoUrl && (
               <div className="edet__hero">
                 <img src={img(entry.photoUrl, 1200) || entry.photoUrl} alt={entry.name} />
-              </div>
-            ) : (
-              <div className={`edet__hero edet__hero--placeholder edet__hero--${entry.kind}`}>
-                {monogramFor(entry) ? (
-                  <span className="t-aside edet__hero-letter">{monogramFor(entry)}</span>
-                ) : (
-                  <IconBottle size={96} stroke={1.1} className="edet__hero-glyph" />
-                )}
               </div>
             )}
 
@@ -290,26 +285,6 @@ export function EntryDetail() {
           background: linear-gradient(180deg, transparent 60%, color-mix(in oklch, var(--smoke) 70%, transparent) 95%, var(--smoke) 100%);
           pointer-events: none;
         }
-        .edet__hero--placeholder {
-          display: grid;
-          place-items: center;
-        }
-        /* Tinted by kind, matching the cellar tile stand-in. */
-        .edet__hero--wine {
-          background:
-            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bordeaux) 42%, transparent) 0%, transparent 70%),
-            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bordeaux) 22%, var(--midnight)) 0%, var(--midnight) 100%);
-        }
-        .edet__hero--beer {
-          background:
-            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--ember) 38%, transparent) 0%, transparent 70%),
-            linear-gradient(160deg in oklch, color-mix(in oklch, var(--ember) 18%, var(--midnight)) 0%, var(--midnight) 100%);
-        }
-        .edet__hero--spirits {
-          background:
-            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bone) 22%, transparent) 0%, transparent 70%),
-            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bone) 10%, var(--midnight)) 0%, var(--midnight) 100%);
-        }
         .edet__reading {
           color: color-mix(in oklch, var(--bone) 55%, transparent);
           font-style: italic;
@@ -319,8 +294,6 @@ export function EntryDetail() {
           0%, 100% { opacity: 0.55; }
           50%      { opacity: 1; }
         }
-        .edet__hero-letter { font-size: 96px; color: color-mix(in oklch, var(--bone) 50%, transparent); font-style: italic; }
-        .edet__hero-glyph { color: color-mix(in oklch, var(--bone) 38%, transparent); }
         .edet__body { padding: 28px; }
         @media (min-width: 760px) { .edet__body { padding: 40px 48px; } }
         .edet__title { margin: 4px 0 6px; }

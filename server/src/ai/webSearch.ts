@@ -17,6 +17,8 @@ export interface WebSearchResult {
   title: string;
   snippet: string;
   url: string;
+  /** Page thumbnail when the provider supplies one. Often the product shot. */
+  thumbnailUrl?: string;
 }
 
 // ---- Per-window call budget (process-local, rolling 60s) ----
@@ -152,7 +154,15 @@ export function parseWebSearchResults(body: unknown, maxResults: number): WebSea
       (typeof r.text === 'string' ? r.text : '');
 
     if (!title && !snippet) continue;
-    out.push({ title, snippet, url });
+
+    // Providers name this differently; You.com returns both of these.
+    const thumbnailUrl =
+      (typeof r.thumbnail_url === 'string' && r.thumbnail_url) ||
+      (typeof r.original_thumbnail_url === 'string' && r.original_thumbnail_url) ||
+      (typeof r.thumbnailUrl === 'string' && r.thumbnailUrl) ||
+      undefined;
+
+    out.push({ title, snippet, url, thumbnailUrl: thumbnailUrl || undefined });
     if (out.length >= maxResults) break;
   }
 

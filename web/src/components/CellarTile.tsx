@@ -1,7 +1,5 @@
 import { useLocation } from 'wouter';
-import { IconBottle } from '@tabler/icons-react';
 import { img } from '../lib/cdn';
-import { monogramFor } from '../lib/monogram';
 import type { CellarEntry } from '../types';
 import { motion } from 'motion/react';
 import { EASE, DUR } from '../lib/motion';
@@ -31,8 +29,7 @@ interface Props {
 export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailability }: Props) {
   const [, navigate] = useLocation();
   const isNew = Date.now() - entry.savedAt < 7 * 24 * 60 * 60 * 1000;
-  const usingPlaceholder = !entry.photoUrl;
-  const monogram = monogramFor(entry);
+  const hasPhoto = !!entry.photoUrl;
   // The availability tag (search mode) already states ownership, so the photo
   // dot would be redundant there; show the dot only outside that case.
   const showOwnedDot = entry.owned === true && !hideOwnedDot && !showAvailability;
@@ -40,7 +37,7 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
   return (
     <motion.article
       layout
-      className={`tile ${featured ? 'tile--featured' : ''}`}
+      className={`tile ${featured ? 'tile--featured' : ''} ${hasPhoto ? '' : 'tile--textonly'}`}
       onClick={() => navigate(`/cellar/${entry.id}`)}
       initial={{ opacity: 0, y: 12, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -55,42 +52,44 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
         }
       }}
     >
-      <div className="tile__photo-wrap">
-        {usingPlaceholder ? (
-          <div className={`tile__stand-in tile__stand-in--${entry.kind}`} aria-hidden="true">
-            {monogram ? (
-              <span className="tile__stand-in-letter">{monogram}</span>
-            ) : (
-              <IconBottle size={featured ? 64 : 48} stroke={1.2} className="tile__stand-in-glyph" />
-            )}
-          </div>
-        ) : (
+      {/* No photo means no image block at all. A letter panel told the reader
+          nothing about the wine, so a text-only card is the honest fallback. */}
+      {hasPhoto && (
+        <div className="tile__photo-wrap">
           <img
             src={img(entry.photoUrl!, featured ? 800 : 480) || entry.photoUrl}
             alt={entry.name}
             className="tile__photo"
             loading="lazy"
           />
-        )}
 
-        {isNew && (
-          <span className="t-label tile__new">NEW</span>
-        )}
+          {isNew && (
+            <span className="t-label tile__new">NEW</span>
+          )}
 
-        {/* Owned marker: a quiet Bone dot, top-right. No glow — ownership is
-            a stated fact, not an achievement. The dark halo keeps it legible
-            over the unpredictable highlights of chiaroscuro photography. */}
-        {showOwnedDot && (
-          <span
-            className={`tile__owned ${featured ? 'tile__owned--lg' : ''}`}
-            title="In the rack"
-            aria-label="In the rack"
-          />
-        )}
-      </div>
+          {/* Owned marker: a quiet Bone dot, top-right. No glow — ownership is
+              a stated fact, not an achievement. The dark halo keeps it legible
+              over the unpredictable highlights of chiaroscuro photography. */}
+          {showOwnedDot && (
+            <span
+              className={`tile__owned ${featured ? 'tile__owned--lg' : ''}`}
+              title="In the rack"
+              aria-label="In the rack"
+            />
+          )}
+        </div>
+      )}
 
       <div className="tile__body">
-        <p className="t-label tile__kind">{entry.kind}</p>
+        <div className="tile__kind-row">
+          <p className="t-label tile__kind">{entry.kind}</p>
+          {/* With no photo to overlay, these markers sit inline beside the
+              kind label instead of floating over an image. */}
+          {!hasPhoto && isNew && <span className="t-label tile__new-inline">NEW</span>}
+          {!hasPhoto && showOwnedDot && (
+            <span className="tile__owned-inline" title="In the rack" aria-label="In the rack" />
+          )}
+        </div>
         <h3 className={featured ? 't-headline' : 'tile__name'}>{entry.name}</h3>
         {(entry.producer || entry.vintage) && (
           <p className="t-caption tile__meta tnum">
@@ -142,40 +141,33 @@ export function CellarTile({ entry, featured, hideOwnedDot, reason, showAvailabi
           transform: scale(1.04);
           filter: saturate(1.05) brightness(1);
         }
-        /* Designed stand-in for entries with no photo. Tinted by kind so a
-           mixed rack reads as varied rather than repeating one stock image. */
-        .tile__stand-in {
-          position: absolute; inset: 0;
-          display: grid; place-items: center;
-          transition: filter 600ms var(--ease-standard);
+        /* Text-only card for entries with no photo. The grid stretches it to
+           the row height, so center the text and let it read like a wine-list
+           entry rather than a card with a hole where a picture should be. */
+        .tile--textonly {
+          justify-content: center;
+          min-height: 148px;
         }
-        .tile:hover .tile__stand-in { filter: brightness(1.12); }
-        .tile__stand-in--wine {
-          background:
-            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bordeaux) 42%, transparent) 0%, transparent 70%),
-            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bordeaux) 22%, var(--midnight)) 0%, var(--midnight) 100%);
+        .tile--textonly .tile__body {
+          padding: 20px 16px;
         }
-        .tile__stand-in--beer {
-          background:
-            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--ember) 38%, transparent) 0%, transparent 70%),
-            linear-gradient(160deg in oklch, color-mix(in oklch, var(--ember) 18%, var(--midnight)) 0%, var(--midnight) 100%);
+        .tile__kind-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
         }
-        .tile__stand-in--spirits {
-          background:
-            radial-gradient(ellipse 70% 60% at 50% 30%, color-mix(in oklch, var(--bone) 22%, transparent) 0%, transparent 70%),
-            linear-gradient(160deg in oklch, color-mix(in oklch, var(--bone) 10%, var(--midnight)) 0%, var(--midnight) 100%);
+        .tile__kind-row .tile__kind { margin-bottom: 0; }
+        .tile__new-inline {
+          color: var(--ember);
+          font-size: 10px;
+          letter-spacing: 0.12em;
         }
-        .tile__stand-in-glyph {
-          color: color-mix(in oklch, var(--bone) 40%, transparent);
-        }
-        .tile__stand-in-letter {
-          font-family: var(--font-rowan);
-          font-style: italic;
-          font-weight: 400;
-          font-size: clamp(56px, 18vw, 96px);
-          color: color-mix(in oklch, var(--bone) 62%, transparent);
-          text-shadow: 0 4px 16px color-mix(in oklch, var(--midnight) 60%, transparent);
-          line-height: 1;
+        .tile__owned-inline {
+          width: 6px; height: 6px;
+          border-radius: var(--radius-pill);
+          background: var(--owned);
+          flex: 0 0 auto;
         }
         .tile__new {
           position: absolute;
