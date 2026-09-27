@@ -3,6 +3,7 @@ import { CellarEntries } from './tables/cellarEntries';
 import { Users } from './tables/users';
 import { VOICE_RULES, DEPTH_GUIDANCE, type Depth } from './common/voice';
 import { webSearch, isWebSearchConfigured } from '../ai/webSearch';
+import { getStorage, extForContentType } from '../storage';
 import { logEvent, ENTRY_ENRICHED } from '../observability/events';
 
 // Fills in the editorial context for a cellar entry that does not have any yet.
@@ -37,8 +38,11 @@ export async function enrichCellarEntry(input: EnrichCellarEntryInput) {
     throw new Error('Entry not found.');
   }
 
-  // Already has editorial context: nothing to do, no cost.
-  if (existing.whyText?.trim()) {
+  // Text and image are filled independently, so an entry enriched before the
+  // image feature existed can still pick up a bottle shot on a later open.
+  const needsText = !existing.whyText?.trim();
+  const needsImage = !existing.photoUrl?.trim();
+  if (!needsText && !needsImage) {
     return { entry: existing, enriched: false };
   }
 
@@ -50,9 +54,11 @@ export async function enrichCellarEntry(input: EnrichCellarEntryInput) {
     .filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
     .join(' ');
 
-  // Optional grounding. Reuses the same bounded, non-fatal web search the scan
-  // enrichment uses; returns [] when unconfigured or over budget.
+  // One bounded, non-fatal web search serves both needs: snippets ground the
+  // editorial text, and a result thumbnail gives us a real photo of the bottle.
+  // Returns [] when unconfigured or over budget.
   let material = '';
+  let imageCandidates: string[] = [];
   if (isWebSearchConfigured()) {
     const suffix =
       existing.kind === 'wine'
@@ -64,6 +70,31 @@ export async function enrichCellarEntry(input: EnrichCellarEntryInput) {
     material = results
       .map((r, i) => `[${i + 1}] ${r.title}\n${r.snippet}`)
       .join('\n\n');
+    imageCandidates = results
+      .map((r) => r.thumbnailUrl)
+      .filter((u): u is string => typeof u === 'string' && u.trim() !== '');
+  }
+
+  const patch: Record<string, unknown> = {};
+
+  // --- Bottle image ---
+  // Take the first candidate we can actually retrieve and store it on our own
+  // storage rather than hotlinking, so the image does not rot or get blocked
+  // later. Non-fatal: no image just means the tile stays text-only.
+  if (needsImage && imageCandidates.length > 0) {
+    const stored = await storeFirstUsableImage(imageCandidates);
+    if (stored) patch.photoUrl = stored;
+  }
+
+  if (!needsText) {
+    // Only the image was missing. Persist it (if we got one) and return.
+    if (Object.keys(patch).length === 0) {
+      logEvent(ENTRY_ENRICHED, { entryId: input.id, outcome: 'empty' });
+      return { entry: existing, enriched: false };
+    }
+    const entry = await CellarEntries.update(input.id, patch);
+    logEvent(ENTRY_ENRICHED, { entryId: input.id, outcome: 'enriched', filled: 'image' });
+    return { entry, enriched: true };
   }
 
   const prompt = `You are SommSavvy, a pocket sommelier. A bottle is in the user's cellar with only its identity recorded. Write the editorial context for it.
@@ -120,23 +151,72 @@ No prose, no markdown fences.`;
     });
     parsed = typeof content === 'string' ? parseJsonLoosely(content) : (content as typeof parsed);
   } catch (err) {
-    // Non-fatal: the entry stays exactly as it was and the page renders what
-    // it has. The next open will try again.
+    // Non-fatal. If we still captured an image, persist that much; otherwise
+    // leave the entry untouched and let the next open try again.
     console.error('Entry enrichment failed (non-fatal):', err);
+    if (Object.keys(patch).length > 0) {
+      const entry = await CellarEntries.update(input.id, patch);
+      logEvent(ENTRY_ENRICHED, { entryId: input.id, outcome: 'partial', filled: 'image' });
+      return { entry, enriched: true };
+    }
     logEvent(ENTRY_ENRICHED, { entryId: input.id, outcome: 'failed' });
     return { entry: existing, enriched: false };
   }
 
-  const patch = buildEditorialPatch(parsed);
+  Object.assign(patch, buildEditorialPatch(parsed));
   if (Object.keys(patch).length === 0) {
     logEvent(ENTRY_ENRICHED, { entryId: input.id, outcome: 'empty' });
     return { entry: existing, enriched: false };
   }
 
-  // Editorial fields only. No identity fields, so no taste regen is triggered.
+  // Editorial fields and the bottle image only. No identity fields, so no
+  // taste regen is triggered.
   const entry = await CellarEntries.update(input.id, patch);
   logEvent(ENTRY_ENRICHED, { entryId: input.id, outcome: 'enriched' });
   return { entry, enriched: true };
+}
+
+/**
+ * Fetch the first retrievable candidate and store it on our own storage.
+ * Returns the stored URL, or null when none can be used.
+ *
+ * Guards, since these URLs come from an external provider: https/http only,
+ * a short timeout, an image content type, and a size cap.
+ */
+async function storeFirstUsableImage(candidates: string[]): Promise<string | null> {
+  const MAX_BYTES = 5 * 1024 * 1024;
+  for (const candidate of candidates.slice(0, 3)) {
+    try {
+      const parsedUrl = new URL(candidate);
+      if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') continue;
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      let res: Response;
+      try {
+        res = await fetch(parsedUrl.toString(), { signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+      if (!res.ok) continue;
+
+      const contentType = (res.headers.get('content-type') || '').split(';')[0]!.trim();
+      if (!contentType.startsWith('image/')) continue;
+
+      const declared = Number(res.headers.get('content-length') || '0');
+      if (declared > MAX_BYTES) continue;
+
+      const bytes = Buffer.from(await res.arrayBuffer());
+      if (bytes.byteLength === 0 || bytes.byteLength > MAX_BYTES) continue;
+
+      const stored = await getStorage().put(bytes, contentType, extForContentType(contentType));
+      return stored.url;
+    } catch {
+      // Try the next candidate.
+      continue;
+    }
+  }
+  return null;
 }
 
 /**
