@@ -43,6 +43,20 @@ export interface CellarEntry {
   // owned defaults false (null treated as false). See Tasted & Owned.
   tasted?: boolean;
   owned?: boolean;
+  // Bottles physically on hand. Meaningful only while owned is true: a whole
+  // number from 1 to 99, read as 1 when absent (legacy and bulk-imported rows).
+  // While owned is not true it reads as 0 and is cleared on the next on-hand
+  // write. Part of the owned axis: changing it never triggers a taste regen.
+  // An inventory quantity, never a rating.
+  bottleCount?: number;
+}
+
+// An entry's on-hand state just before a bottle outcome, returned by
+// recordBottleOutcomes so Undo can restore it.
+export interface OnHandSnapshot {
+  owned: true;
+  bottleCount: number; // bottles on hand before the outcome, 1..99
+  tasted: boolean; // normalized: null reads as true
 }
 
 export interface Recommendation {

@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'motion/react';
-import { IconArrowLeft, IconSearch, IconFileImport } from '@tabler/icons-react';
+import { IconArrowLeft, IconSearch, IconFileImport, IconListCheck } from '@tabler/icons-react';
 import { Header } from '../components/Header';
 import { Atmosphere } from '../components/Atmosphere';
 import { CellarMosaic } from '../components/CellarMosaic';
 import { AuthSheet } from '../components/AuthSheet';
 import { ImportSheet } from '../components/ImportSheet';
+import { RackCheckSheet } from '../components/RackCheckSheet';
 import { useStore } from '../store';
 import { api } from '../api';
 import { img } from '../lib/cdn';
 import { EASE, DUR } from '../lib/motion';
+import { bottlesOnHand } from '../lib/onHand';
 import type { CellarEntry, Kind } from '../types';
 
 // Boot-time placeholder. Reserves the visual space the mosaic will take so
@@ -116,6 +118,12 @@ export function Cellar() {
   const [search, setSearch] = useState('');
   const [authOpen, setAuthOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [rackCheckOpen, setRackCheckOpen] = useState(false);
+
+  // Everything on hand, independent of the search query. Feeds the rack bar's
+  // bottle total; the rack check takes its own snapshot when it opens.
+  const onHand = useMemo(() => cellar.filter((e) => e.owned === true), [cellar]);
+  const bottlesTotal = useMemo(() => onHand.reduce((sum, e) => sum + bottlesOnHand(e), 0), [onHand]);
 
   // Once auth state has settled, anonymous users get the sign-in sheet
   // automatically. We don't open it before then to avoid a flash for users
@@ -265,6 +273,20 @@ export function Cellar() {
                 ))}
               </div>
 
+              {/* Rack bar. Only in the "In the Rack" view, and only when
+                  something is on hand. Opens the rack check, a stocktake of
+                  every bottle on hand whatever the search query. */}
+              {filter === 'rack' && onHand.length > 0 && (
+                <div className="cellar__rackbar">
+                  <p className="t-caption tnum cellar__rackbar-count">
+                    {bottlesTotal} {bottlesTotal === 1 ? 'bottle' : 'bottles'} on hand
+                  </p>
+                  <button className="btn-tertiary cellar__rackcheck" onClick={() => setRackCheckOpen(true)}>
+                    <IconListCheck size={16} stroke={1.6} /> Rack check
+                  </button>
+                </div>
+              )}
+
               <div className="cellar__search">
                 <IconSearch size={16} stroke={1.5} />
                 {/* Personalize the placeholder when the user has a display
@@ -339,6 +361,7 @@ export function Cellar() {
         </motion.main>
 
         <ImportSheet open={importOpen} onClose={() => setImportOpen(false)} />
+        <RackCheckSheet open={rackCheckOpen} onClose={() => setRackCheckOpen(false)} />
 
         <AnimatePresence>
           {authOpen && (
@@ -404,6 +427,23 @@ export function Cellar() {
           background: var(--ember);
           color: var(--midnight);
           border-color: var(--ember);
+        }
+        .cellar__rackbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin: -4px 0 12px;
+        }
+        .cellar__rackbar-count {
+          color: color-mix(in oklch, var(--bone) 70%, transparent);
+        }
+        .cellar__rackcheck {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding-right: 0;
         }
         .cellar__search {
           display: flex; align-items: center; gap: 10px;

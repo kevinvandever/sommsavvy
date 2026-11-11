@@ -4,7 +4,7 @@
 
 **North-star:** The engaged enthusiast keeps adding tasted bottles to their cellar, so the taste profile sharpens and every recommendation feels more like theirs. Growth of tasted cellar entries per active user is the signal the product is working.
 
-**Last updated:** July 2026 · **Currently building:** nothing in flight. Next up: Tasted vs Owned (surface the two axes). Note: Taste Seeding is already live (ported from Remy), not pending.
+**Last updated:** November 2026 · **Currently building:** Rack check (first slice of Tasted vs Owned), spec `.kiro/specs/rack-check`. Note: Taste Seeding is already live (ported from Remy), not pending.
 
 ---
 
@@ -50,8 +50,9 @@
 ## Next
 *Sequenced from the Living Cellar lane, the taste flywheel first.*
 
-### Tasted vs Owned (surface the two axes) — `up next`
+### Tasted vs Owned (surface the two axes) — `in progress`
 - **What:** make the tasted/owned distinction first-class in the UI (filters, toggles).
+- **First slice: Rack check** (in progress). Keeps the `owned` axis honest, because bottles get drunk and the flag goes stale. It adds three things: a rack check (a stocktake opened from "In the Rack" where each missing bottle is marked "Drank it" or "Gave it away"), the same two outcomes on the entry page, and per-entry bottle counts. The user chose B1 (an optional count, each outcome removes one bottle, the last one takes the entry off the rack, bulk import unchanged) and R (the outcomes replace the "I have a bottle of this" switch while a bottle is on hand). Adds one optional field, `bottleCount`, to `cellar_entries`, with no new tables. "Drank it" is the first UI path that marks a bottle tasted, which closes the bulk-import follow-up "Easy mark tasted on owned/imported entries". Spec: `.kiro/specs/rack-check`.
 - **Depends on:** Smart Scan (sets tasted on capture).
 - **Unblocks:** inventory features (drinking windows, home bar).
 - **Why it matters:** separates the journal from the inventory; both flywheels need it.
