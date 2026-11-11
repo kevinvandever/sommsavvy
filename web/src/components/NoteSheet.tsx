@@ -14,10 +14,21 @@ interface Props {
   contextLine?: string;
   // Ownership dimension. Controlled by the parent so it can persist the
   // moment it's toggled (independent of whether a note is written) — the
-  // entry is already saved by the time this sheet is open.
-  owned: boolean;
-  onOwnedChange: (next: boolean) => void;
+  // entry is already saved by the time this sheet is open. The ownership row
+  // renders only when onOwnedChange is passed: the save flow passes it; the
+  // note after "Drank it" does not, since the bottle count covers that there.
+  owned?: boolean;
+  onOwnedChange?: (next: boolean) => void;
+  // Overrides the textarea placeholder (the note after "Drank it" invites a
+  // line about how it drank, including "not for you").
+  placeholder?: string;
+  // A save failure from the parent. Shown inline; the parent keeps the sheet
+  // open so the text is not lost.
+  error?: string | null;
 }
+
+const DEFAULT_PLACEHOLDER =
+  "What's the moment? Where did you find it? What was on the plate? Any of it. All optional.";
 
 // The Add-a-note bottom sheet. Opens after the user taps the tertiary
 // "Add a note" link beneath a saved pill. Capture happens here rather
@@ -28,7 +39,17 @@ interface Props {
 // fine. Honesty helps." That copy turns notes from a journaling chore
 // into an act of personalization, matching the language on the Profile
 // page's depth dial. Empty notes are treated as a skip.
-export function NoteSheet({ open, onClose, onSave, drinkName, contextLine, owned, onOwnedChange }: Props) {
+export function NoteSheet({
+  open,
+  onClose,
+  onSave,
+  drinkName,
+  contextLine,
+  owned,
+  onOwnedChange,
+  placeholder = DEFAULT_PLACEHOLDER,
+  error,
+}: Props) {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
@@ -71,7 +92,7 @@ export function NoteSheet({ open, onClose, onSave, drinkName, contextLine, owned
           className="nsheet__ta"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="What's the moment? Where did you find it? What was on the plate? Any of it. All optional."
+          placeholder={placeholder}
           rows={4}
           maxLength={1000}
         />
@@ -79,24 +100,33 @@ export function NoteSheet({ open, onClose, onSave, drinkName, contextLine, owned
         <p className="t-caption nsheet__hint">
           Notes shape how I read you. Skip is fine. Honesty helps.
         </p>
+        {error && (
+          <p className="t-caption nsheet__error" role="alert">
+            {error}
+          </p>
+        )}
 
         {/* Ownership row. A different concern from the note, so a full-width
             hairline divider separates it. Off by default — most saves are
             things tasted, not bottles held. The whole row is tappable. */}
-        <div className="nsheet__divider" />
-        <div
-          className="nsheet__own"
-          role="presentation"
-          onClick={() => onOwnedChange(!owned)}
-        >
-          <IconBottle size={18} stroke={1.5} className="nsheet__own-glyph" />
-          <span className="nsheet__own-label">I have a bottle of this</span>
-          <Switch
-            checked={owned}
-            onChange={onOwnedChange}
-            ariaLabel="I have a bottle of this"
-          />
-        </div>
+        {onOwnedChange && (
+          <>
+            <div className="nsheet__divider" />
+            <div
+              className="nsheet__own"
+              role="presentation"
+              onClick={() => onOwnedChange(!(owned ?? false))}
+            >
+              <IconBottle size={18} stroke={1.5} className="nsheet__own-glyph" />
+              <span className="nsheet__own-label">I have a bottle of this</span>
+              <Switch
+                checked={owned ?? false}
+                onChange={onOwnedChange}
+                ariaLabel="I have a bottle of this"
+              />
+            </div>
+          </>
+        )}
 
         <div className="nsheet__actions">
           <button type="button" className="btn-tertiary" onClick={onClose} disabled={saving}>
@@ -162,6 +192,10 @@ export function NoteSheet({ open, onClose, onSave, drinkName, contextLine, owned
             font-style: italic;
             font-family: var(--font-rowan, var(--font-geist));
             margin: 4px 0 0;
+          }
+          .nsheet__error {
+            color: color-mix(in oklch, var(--bordeaux) 80%, var(--bone));
+            margin: 0;
           }
           .nsheet__divider {
             height: 1px;

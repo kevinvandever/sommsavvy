@@ -8,6 +8,7 @@ export const SCAN_ENRICHED = 'scan_enriched';
 export const CELLAR_SAVED = 'cellar_saved';
 export const CELLAR_IMPORTED = 'cellar_imported';
 export const ENTRY_ENRICHED = 'entry_enriched';
+export const BOTTLE_OUTCOMES = 'bottle_outcomes';
 export const SIGNED_UP = 'signed_up';
 
 export function logEvent(event: string, data: Record<string, unknown>): void {

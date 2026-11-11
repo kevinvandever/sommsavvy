@@ -6,6 +6,7 @@ import type {
   CellarEntry,
   Depth,
   Kind,
+  OnHandSnapshot,
   PocketSommOutput,
   ScanResult,
   Source,
@@ -177,6 +178,20 @@ export const api = {
     patch: Partial<CellarEntry>;
   }): Promise<{ entry: CellarEntry }> {
     return rpc('/updateCellarEntry', input);
+  },
+
+  // Records how bottles left the rack ("Drank it", "Gave it away"). The server
+  // decrements from its stored count, so a stale screen cannot over-remove.
+  // Partial success: rows that cannot apply come back in `rejected` with a
+  // reason. `previous` is each entry's on-hand state before, for Undo.
+  recordBottleOutcomes(input: {
+    items: Array<{ id: string; drank?: number; gaveAway?: number }>;
+    surface?: 'entry' | 'rack_check';
+  }): Promise<{
+    applied: Array<{ id: string; entry: CellarEntry; previous: OnHandSnapshot }>;
+    rejected: Array<{ id: string; reason: string }>;
+  }> {
+    return rpc('/recordBottleOutcomes', input);
   },
 
   removeCellarEntry(input: { id: string }): Promise<{ deleted: boolean }> {

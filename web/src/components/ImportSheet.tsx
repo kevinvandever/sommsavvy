@@ -301,8 +301,9 @@ export function ImportSheet({ open, onClose }: Props) {
             {savedCount} {savedCount === 1 ? 'bottle' : 'bottles'} in the rack.
           </h2>
           <p className="t-body imp__lede">
-            They are marked as on hand and not yet tasted. Mark one tasted when you open it and it
-            starts shaping your profile.
+            They are marked as on hand and not yet tasted, one bottle each. When you open one, tap
+            Drank it on its page and it starts shaping your profile. Have more than one of
+            something? Set the count there too.
           </p>
           {rejected.length > 0 && (
             <div className="imp__rejected">
